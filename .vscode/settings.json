@@ -1,0 +1,99 @@
+{
+  "editor.insertSpaces": false,
+  "editor.tabSize": 4,
+  "editor.detectIndentation": false,
+  "editor.rulers": [80],
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // C# specific settings
+  "dotnet.defaultSolution": "backend/PerryChick.sln",
+  "omnisharp.enableRoslynAnalyzers": true,
+  "omnisharp.enableEditorConfigSupport": true,
+
+  // Vue.js specific settings
+  "vetur.format.defaultFormatter.html": "prettier",
+  "vetur.format.defaultFormatter.css": "prettier",
+  "vetur.format.defaultFormatter.js": "prettier",
+  "vetur.format.defaultFormatter.ts": "prettier",
+  "vetur.format.options.tabSize": 4,
+  "vetur.format.options.useTabs": true,
+
+  // Prettier configuration
+  "prettier.useTabs": true,
+  "prettier.tabWidth": 4,
+  "prettier.printWidth": 80,
+
+  // Docker settings
+  "docker.defaultRegistryPath": "yourusername",
+
+  // Kubernetes settings
+  "vs-kubernetes.kubectl-path": "kubectl",
+  "vs-kubernetes.minikube-path": "minikube",
+
+  // File associations
+  "files.associations": {
+    "*.yaml": "yaml",
+    "*.yml": "yaml",
+    "deploy.yaml": "kubernetes",
+    "Dockerfile*": "dockerfile"
+  },
+
+  // Search settings
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bin": true,
+    "**/obj": true,
+    "**/.git": true,
+    "**/dist": true,
+    "**/build": true
+  },
+
+  // Terminal settings
+  "terminal.integrated.defaultProfile.windows": "PowerShell",
+  "terminal.integrated.cwd": "${workspaceFolder}",
+
+  // Git settings
+  "git.enableSmartCommit": true,
+  "git.confirmSync": false,
+  "git.autofetch": true,
+
+  // Telemetry and monitoring
+  "telemetry.telemetryLevel": "error",
+
+  // Language specific settings
+  "[csharp]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  },
+  "[javascript]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  },
+  "[typescript]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  },
+  "[vue]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": false
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true
+  },
+  "[json]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": false
+  },
+  "[markdown]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.wordWrap": "on"
+  }
+}

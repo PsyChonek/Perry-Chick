@@ -1,0 +1,142 @@
+# REST Client configuration for Perry Chick API testing
+# Use with the REST Client extension in VS Code
+
+# Variables
+@baseUrl = http://localhost:5000/api
+@notificationsUrl = http://localhost:5003/api
+@keycloakUrl = http://localhost:8080
+@authToken = {{login.response.body.access_token}}
+
+### Health Check - Backend API
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### Health Check - Notifications Service
+GET {{notificationsUrl}}/health
+Content-Type: application/json
+
+### Keycloak - Get Token
+# @name login
+POST {{keycloakUrl}}/realms/perrychick/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=perrychick-frontend&username=testuser&password=testpass
+
+### Get All Products
+GET {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Get Product by ID
+GET {{baseUrl}}/products/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Create New Product (Admin only)
+POST {{baseUrl}}/products
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+	"name": "Gourmet Popcorn",
+	"description": "Delicious butter-flavored popcorn",
+	"price": 9.99,
+	"stock": 100,
+	"category": "popcorn",
+	"imageUrl": "https://example.com/popcorn.jpg"
+}
+
+### Update Product
+PUT {{baseUrl}}/products/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+	"id": 1,
+	"name": "Premium Gourmet Popcorn",
+	"description": "Extra delicious butter-flavored popcorn",
+	"price": 12.99,
+	"stock": 95,
+	"category": "popcorn",
+	"imageUrl": "https://example.com/premium-popcorn.jpg"
+}
+
+### Delete Product
+DELETE {{baseUrl}}/products/1
+Authorization: Bearer {{authToken}}
+
+### Get User's Cart
+GET {{baseUrl}}/cart
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Add Item to Cart
+POST {{baseUrl}}/cart/items
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+	"productId": 1,
+	"quantity": 2
+}
+
+### Update Cart Item
+PUT {{baseUrl}}/cart/items/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+	"quantity": 3
+}
+
+### Remove Item from Cart
+DELETE {{baseUrl}}/cart/items/1
+Authorization: Bearer {{authToken}}
+
+### Create Order
+POST {{baseUrl}}/orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+	"shippingAddress": {
+		"street": "123 Main St",
+		"city": "Anytown",
+		"state": "ST",
+		"zipCode": "12345",
+		"country": "USA"
+	}
+}
+
+### Get User's Orders
+GET {{baseUrl}}/orders
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Get Order by ID
+GET {{baseUrl}}/orders/1
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+### Send Test Notification
+POST {{notificationsUrl}}/notifications/test
+Content-Type: application/json
+
+{
+	"type": "email",
+	"recipient": "test@example.com",
+	"subject": "Test Notification",
+	"message": "This is a test notification from Perry Chick!"
+}
+
+### Get Notification Status
+GET {{notificationsUrl}}/notifications/status/123
+Content-Type: application/json
+
+### Prometheus Metrics - Backend
+GET http://localhost:5000/metrics
+Accept: text/plain
+
+### Prometheus Metrics - Notifications
+GET http://localhost:5003/metrics
+Accept: text/plain

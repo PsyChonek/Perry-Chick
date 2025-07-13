@@ -1,0 +1,79 @@
+{
+	"folders": [
+		{
+			"name": "Perry Chick (Root)",
+			"path": "."
+		},
+		{
+			"name": "Frontend (Vue.js)",
+			"path": "./frontend"
+		},
+		{
+			"name": "Backend (C# API)",
+			"path": "./backend"
+		},
+		{
+			"name": "Notifications Service",
+			"path": "./notifications"
+		},
+		{
+			"name": "Kubernetes Manifests",
+			"path": "./k8s"
+		},
+		{
+			"name": "Documentation",
+			"path": "./.github"
+		},
+		{
+			"name": "Monitoring",
+			"path": "./monitoring"
+		}
+	],
+	"settings": {
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4,
+		"editor.detectIndentation": false,
+		"editor.rulers": [80],
+		"editor.formatOnSave": true,
+		"files.trimTrailingWhitespace": true,
+		"files.insertFinalNewline": true,
+		"prettier.useTabs": true,
+		"prettier.tabWidth": 4,
+		"prettier.printWidth": 80,
+		"search.exclude": {
+			"**/node_modules": true,
+			"**/bin": true,
+			"**/obj": true,
+			"**/.git": true,
+			"**/dist": true,
+			"**/build": true
+		}
+	},
+	"extensions": {
+		"recommendations": [
+			"ms-dotnettools.csharp",
+			"ms-dotnettools.csdevkit",
+			"vue.volar",
+			"esbenp.prettier-vscode",
+			"ms-azuretools.vscode-docker",
+			"ms-kubernetes-tools.vscode-kubernetes-tools",
+			"eamodio.gitlens",
+			"redhat.vscode-yaml",
+			"humao.rest-client"
+		]
+	},
+	"tasks": {
+		"version": "2.0.0",
+		"tasks": [
+			{
+				"label": "Perry Chick: Full Setup",
+				"dependsOrder": "sequence",
+				"dependsOn": [
+					"Setup Development Environment",
+					"Start Minikube",
+					"Deploy to Kubernetes"
+				]
+			}
+		]
+	}
+}

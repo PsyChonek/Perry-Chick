@@ -1,0 +1,91 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend API",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Build Backend",
+      "program": "${workspaceFolder}/backend/bin/Debug/net8.0/PerryChick.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/backend",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5001;http://localhost:5000"
+      },
+      "sourceFileMap": {
+        "/Views": "${workspaceFolder}/Views"
+      }
+    },
+    {
+      "name": "Debug Notifications Service",
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${workspaceFolder}/notifications/bin/Debug/net8.0/PerryChick.Notifications.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/notifications",
+      "console": "internalConsole",
+      "stopAtEntry": false,
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5002;http://localhost:5003"
+      }
+    },
+    {
+      "name": "Attach to Backend Container",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickRemoteProcess}",
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}",
+        "pipeProgram": "kubectl",
+        "pipeArgs": ["exec", "-i", "${input:podName}", "--"],
+        "debuggerPath": "/vsdbg/vsdbg",
+        "quoteArgs": false
+      },
+      "sourceFileMap": {
+        "/app": "${workspaceFolder}/backend"
+      }
+    },
+    {
+      "name": "Debug Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/chrome-debug-profile"
+    },
+    {
+      "name": "Debug Frontend (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}/frontend/src",
+      "sourceMaps": true,
+      "userDataDir": "${workspaceFolder}/.vscode/edge-debug-profile"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack",
+      "configurations": [
+        "Debug Backend API",
+        "Debug Notifications Service",
+        "Debug Frontend (Chrome)"
+      ],
+      "stopAll": true,
+      "preLaunchTask": "Setup Development Environment"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "podName",
+      "description": "Enter the pod name to attach to",
+      "default": "backend-deployment-xxxxx-xxxxx",
+      "type": "promptString"
+    }
+  ]
+}

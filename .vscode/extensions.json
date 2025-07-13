@@ -1,0 +1,47 @@
+{
+  "recommendations": [
+    // C# Development
+    "ms-dotnettools.csharp",
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.vscode-dotnet-runtime",
+
+    // Vue.js Development
+    "vue.volar",
+    "vue.vscode-typescript-vue-plugin",
+
+    // JavaScript/TypeScript
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "bradlc.vscode-tailwindcss",
+
+    // Docker & Kubernetes
+    "ms-azuretools.vscode-docker",
+    "ms-kubernetes-tools.vscode-kubernetes-tools",
+
+    // Database
+    "ms-mssql.mssql",
+    "ckolkman.vscode-postgres",
+
+    // Git & Version Control
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+
+    // YAML & Configuration
+    "redhat.vscode-yaml",
+    "ms-vscode.vscode-json",
+
+    // Testing
+    "ms-dotnettools.dotnet-interactive-vscode",
+    "hbenl.vscode-test-explorer",
+
+    // Productivity
+    "ms-vscode.powershell",
+
+    // Markdown & Documentation
+    "yzhang.markdown-all-in-one",
+    "shd101wyy.markdown-preview-enhanced",
+
+    // Theme & UI
+    "pkief.material-icon-theme"
+  ]
+}

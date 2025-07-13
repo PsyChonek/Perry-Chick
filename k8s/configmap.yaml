@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: perrychick-config
+data:
+  # Database Configuration
+  POSTGRES_DB: "perrychick_db"
+  POSTGRES_USER: "perrychick"
+
+  # Keycloak Configuration
+  KEYCLOAK_ADMIN: "admin"
+  KEYCLOAK_REALM: "perrychick"
+  KEYCLOAK_CLIENT_ID: "perrychick-frontend"
+
+  # Redis Configuration
+  REDIS_URL: "redis:6379"
+
+  # Application URLs (for Kubernetes internal communication)
+  FRONTEND_URL: "http://perrychick-frontend:3000"
+  BACKEND_URL: "http://perrychick-backend:5000"
+  NOTIFICATIONS_URL: "http://perrychick-notifications:5003"
+
+  # Keycloak URLs (for Kubernetes internal communication)
+  KEYCLOAK_URL: "http://keycloak:8080"
+  KC_DB: "postgres"
+  KC_DB_URL: "jdbc:postgresql://postgres:5432/perrychick_db"
+  KC_DB_USERNAME: "perrychick"
+
+  # Email Configuration
+  FROM_EMAIL: "noreply@perrychick.com"
+
+  # Application Environment
+  ASPNETCORE_ENVIRONMENT: "Production"
+
+  # Frontend Environment Variables
+  VITE_API_BASE_URL: "http://perrychick-backend:5000/api"
+  VITE_KEYCLOAK_URL: "http://localhost:8080"
+  VITE_KEYCLOAK_REALM: "perrychick"
+  VITE_KEYCLOAK_CLIENT_ID: "perrychick-frontend"

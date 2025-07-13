@@ -1,0 +1,88 @@
+{
+  "name": "Perry Chick Development",
+  "dockerFile": "Dockerfile.dev",
+  "context": "..",
+  "shutdownAction": "stopContainer",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "forwardPorts": [3000, 5000, 5001, 5002, 5003, 8080, 9090, 3001, 16686, 6379],
+  "portsAttributes": {
+    "3000": {
+      "label": "Vue.js Frontend",
+      "onAutoForward": "openBrowser"
+    },
+    "5000": {
+      "label": "Backend API (HTTP)",
+      "onAutoForward": "notify"
+    },
+    "5001": {
+      "label": "Backend API (HTTPS)",
+      "onAutoForward": "notify"
+    },
+    "5002": {
+      "label": "Notifications Service (HTTPS)",
+      "onAutoForward": "notify"
+    },
+    "5003": {
+      "label": "Notifications Service (HTTP)",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Keycloak",
+      "onAutoForward": "notify"
+    },
+    "9090": {
+      "label": "Prometheus",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Grafana",
+      "onAutoForward": "openBrowser"
+    },
+    "16686": {
+      "label": "Jaeger UI",
+      "onAutoForward": "openBrowser"
+    },
+    "6379": {
+      "label": "Redis",
+      "onAutoForward": "ignore"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "vue.volar",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "humao.rest-client"
+      ],
+      "settings": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 4,
+        "editor.rulers": [80],
+        "prettier.useTabs": true,
+        "prettier.tabWidth": 4,
+        "prettier.printWidth": 80
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/dotnet:1": {
+      "version": "8.0"
+    }
+  },
+  "remoteUser": "vscode"
+}
