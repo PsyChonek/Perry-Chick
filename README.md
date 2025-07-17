@@ -1,6 +1,6 @@
 # Perry Chick E-Shop
 
-![Perry Chick Logo](https://via.placeholder.com/150?text=Perry+Chick)
+![Perry Chick Logo](https://picsum.photos/900/200)
 
 ## Overview
 

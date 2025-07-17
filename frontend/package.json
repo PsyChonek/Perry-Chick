@@ -12,11 +12,14 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
-		"lint": "prettier --check . && eslint ."
+		"lint": "prettier --check . && eslint .",
+		"generate-api": "openapi-generator-cli generate -i http://localhost:5006/swagger/v1/swagger.json -g typescript-fetch -o ./src/lib/api --additional-properties=typescriptThreePlus=true --skip-validate-spec",
+		"generate-api-file": "openapi-generator-cli generate -i ./swagger.json -g typescript-fetch -o ./src/lib/api --additional-properties=typescriptThreePlus=true --skip-validate-spec"
 	},
 	"dependencies": {
 		"@sveltejs/adapter-node": "^5.2.13",
-		"@sveltejs/kit": "^2.22.0"
+		"@sveltejs/kit": "^2.22.0",
+		"keycloak-js": "^26.2.0"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
@@ -26,6 +29,8 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
+		"@types/keycloak-js": "^2.5.4",
+		"@types/node": "^24.0.14",
 		"eslint": "^9.18.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",
@@ -35,6 +40,7 @@
 		"prettier-plugin-tailwindcss": "^0.6.11",
 		"svelte": "^5.0.0",
 		"svelte-check": "^4.0.0",
+		"swagger-typescript-api": "^13.2.7",
 		"tailwindcss": "^4.0.0",
 		"typescript": "^5.0.0",
 		"typescript-eslint": "^8.20.0",

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { execSync, spawn } = require("child_process");
+const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
@@ -8,7 +8,6 @@ const path = require("path");
 const args = process.argv.slice(2);
 let skipMinikube = false;
 let skipDocker = false;
-let dockerRegistry = "yourusername";
 
 for (let i = 0; i < args.length; i++) {
 	switch (args[i]) {
@@ -17,9 +16,6 @@ for (let i = 0; i < args.length; i++) {
 			break;
 		case "--skip-docker":
 			skipDocker = true;
-			break;
-		case "--docker-registry":
-			dockerRegistry = args[++i];
 			break;
 		case "-h":
 		case "--help":
@@ -108,15 +104,6 @@ if (!fs.existsSync(".env.local")) {
 		console.log(
 			"   Please edit .env.local with your actual configuration values"
 		);
-	} else {
-		console.log("⚠️  .env.example not found, creating basic .env.local");
-		const envContent = `DATABASE_URL=Host=localhost;Database=perrychick_db;Username=perrychick;Password=dev_password_change_me
-DOCKER_REGISTRY=${dockerRegistry}
-FRONTEND_URL=http://localhost:3000
-BACKEND_URL=http://localhost:5000
-NOTIFICATIONS_URL=http://localhost:5003
-`;
-		fs.writeFileSync(".env.local", envContent);
 	}
 } else {
 	console.log("✅ .env.local already exists");

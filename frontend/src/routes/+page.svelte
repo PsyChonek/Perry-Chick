@@ -1,18 +1,37 @@
 <script>
 	import { onMount } from 'svelte';
+	import { api } from '$lib';
+	import LoginButton from '$lib/components/LoginButton.svelte';
 
 	let apiStatus = 'Checking...';
+	/**
+	 * @type {import("$lib").ApiConfig | null}
+	 */
+	let backendInfo = null;
+	/**
+	 * @type {import("$lib").ConfigStatus | null}
+	 */
+	let configStatus = null;
 
 	onMount(async () => {
-		try {
-			const response = await fetch('/api/health');
-			if (response.ok) {
-				apiStatus = 'Connected ✅';
-			} else {
-				apiStatus = 'Backend Unavailable ❌';
-			}
-		} catch (error) {
-			apiStatus = 'Backend Unavailable ❌';
+		// Test health endpoint
+		const healthResponse = await api.health();
+		if (healthResponse.data) {
+			apiStatus = `Connected ✅ (v${healthResponse.data.version})`;
+		} else {
+			apiStatus = `Backend Unavailable ❌ (${healthResponse.error})`;
+		}
+
+		// Get backend info
+		const rootResponse = await api.root();
+		if (rootResponse.data) {
+			backendInfo = rootResponse.data;
+		}
+
+		// Get config status (development only)
+		const configResponse = await api.config();
+		if (configResponse.data) {
+			configStatus = configResponse.data;
 		}
 	});
 </script>
@@ -44,11 +63,10 @@
 					<a href="/contact" class="font-medium text-amber-700 hover:text-amber-900"
 						>Contact</a
 					>
-					<a
-						href="/login"
-						class="rounded-lg bg-amber-600 px-4 py-2 text-white transition-colors hover:bg-amber-700"
-						>Login</a
+					<a href="/protected" class="font-medium text-amber-700 hover:text-amber-900"
+						>Chick Management</a
 					>
+					<LoginButton />
 				</nav>
 			</div>
 		</div>
@@ -124,12 +142,46 @@
 				<div class="rounded-lg bg-white p-6 shadow-sm">
 					<h4 class="mb-2 text-lg font-semibold text-amber-800">Backend API</h4>
 					<p class="text-amber-600">{apiStatus}</p>
+					{#if backendInfo}
+						<div class="mt-2 text-sm text-amber-500">
+							<p>Environment: {backendInfo.environment}</p>
+							<p>Last Updated: {new Date(backendInfo.timestamp).toLocaleString()}</p>
+						</div>
+					{/if}
 				</div>
 				<div class="rounded-lg bg-white p-6 shadow-sm">
 					<h4 class="mb-2 text-lg font-semibold text-amber-800">Frontend Application</h4>
 					<p class="text-amber-600">Running ✅</p>
+					<div class="mt-2 text-sm text-amber-500">
+						<p>SvelteKit + TailwindCSS</p>
+						<p>Development Mode</p>
+					</div>
 				</div>
 			</div>
+
+			{#if configStatus}
+				<div class="mt-6 rounded-lg bg-white p-6 shadow-sm">
+					<h4 class="mb-3 text-lg font-semibold text-amber-800">Configuration Status</h4>
+					<div class="grid gap-2 text-sm">
+						<div class="flex justify-between">
+							<span class="text-amber-700">Database:</span>
+							<span class="text-amber-600">{configStatus.databaseUrl}</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-amber-700">Frontend URL:</span>
+							<span class="text-amber-600">{configStatus.frontendUrl}</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-amber-700">Keycloak:</span>
+							<span class="text-amber-600">{configStatus.keycloakUrl}</span>
+						</div>
+						<div class="flex justify-between">
+							<span class="text-amber-700">Auth Client:</span>
+							<span class="text-amber-600">{configStatus.keycloakClientId}</span>
+						</div>
+					</div>
+				</div>
+			{/if}
 		</div>
 	</section>
 

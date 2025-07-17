@@ -96,6 +96,62 @@
       "command": "kubectl",
       "args": ["get", "pods", "-o", "wide"],
       "group": "test"
+    },
+    {
+      "label": "Start Local PostgreSQL",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-postgres.ps1"],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Stop Local PostgreSQL",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-postgres.ps1", "-Stop"],
+      "group": "test"
+    },
+    {
+      "label": "Restart Local PostgreSQL",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-postgres.ps1", "-Force"],
+      "group": "test"
+    },
+    {
+      "label": "Generate API Client",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "generate-api"],
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "group": "build",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Debug Backend"]
+    },
+    {
+      "label": "Start Local Keycloak",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-keycloak.ps1"],
+      "group": "test",
+      "isBackground": false
+    },
+    {
+      "label": "Stop Local Keycloak",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-keycloak.ps1", "-Stop"],
+      "group": "test"
+    },
+    {
+      "label": "Restart Local Keycloak",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/start-local-keycloak.ps1", "-Force"],
+      "group": "test"
     }
   ]
 }
