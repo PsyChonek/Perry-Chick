@@ -59,13 +59,13 @@ Write-Host "  🔌 Backend API:   http://localhost:5000" -ForegroundColor Cyan
 Write-Host "  📧 Notifications: http://localhost:5003" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "🔧 Infrastructure:" -ForegroundColor White
-Write-Host "  🔐 Keycloak:      http://localhost:8080 (admin/adminpassword)" -ForegroundColor Cyan
+Write-Host "  🔐 Keycloak:      http://localhost:8080" -ForegroundColor Cyan
 Write-Host "  🗄️  PostgreSQL:    localhost:5432" -ForegroundColor Cyan
 Write-Host "  🔴 Redis:         localhost:6379" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "📝 Content & Monitoring:" -ForegroundColor White
 Write-Host "  📝 Strapi CMS:    http://localhost:1337" -ForegroundColor Yellow
-Write-Host "  📊 Grafana:       http://localhost:3001 (admin/adminpassword)" -ForegroundColor Yellow
+Write-Host "  📊 Grafana:       http://localhost:3001" -ForegroundColor Yellow
 Write-Host "  📈 Prometheus:    http://localhost:9090" -ForegroundColor Yellow
 Write-Host "  🔍 Jaeger:        http://localhost:16686" -ForegroundColor Yellow
 Write-Host "  📡 OTEL Collector: localhost:4317 (gRPC)" -ForegroundColor Yellow

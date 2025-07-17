@@ -3,37 +3,39 @@ kind: ConfigMap
 metadata:
   name: perrychick-config
 data:
-  # Database Configuration
-  POSTGRES_DB: "perrychick_db"
   POSTGRES_USER: "perrychick"
-
-  # Keycloak Configuration
+  POSTGRES_DB: "perrychick_db"
   KEYCLOAK_ADMIN: "admin"
+  KEYCLOAK_URL: "http://localhost:8080"
   KEYCLOAK_REALM: "perrychick"
   KEYCLOAK_CLIENT_ID: "perrychick-frontend"
-
-  # Redis Configuration
-  REDIS_URL: "redis:6379"
-
-  # Application URLs (for Kubernetes internal communication)
-  FRONTEND_URL: "http://perrychick-frontend:3000"
-  BACKEND_URL: "http://perrychick-backend:5000"
-  NOTIFICATIONS_URL: "http://perrychick-notifications:5003"
-
-  # Keycloak URLs (for Kubernetes internal communication)
-  KEYCLOAK_URL: "http://keycloak:8080"
   KC_DB: "postgres"
   KC_DB_URL: "jdbc:postgresql://postgres:5432/perrychick_db"
   KC_DB_USERNAME: "perrychick"
-
-  # Email Configuration
+  REDIS_URL: "localhost:6379"
   FROM_EMAIL: "noreply@perrychick.com"
-
-  # Application Environment
-  ASPNETCORE_ENVIRONMENT: "Production"
-
-  # Frontend Environment Variables
-  VITE_API_BASE_URL: "http://perrychick-backend:5000/api"
+  FRONTEND_URL: "http://localhost:3000"
+  BACKEND_URL: "http://localhost:5000"
+  NOTIFICATIONS_URL: "http://localhost:5003"
+  STRAPI_URL: "http://localhost:1337"
+  PROMETHEUS_URL: "http://localhost:9090"
+  GRAFANA_URL: "http://localhost:3001"
+  JAEGER_URL: "http://localhost:16686"
+  DOCKER_REGISTRY: "yourusername"
+  IMAGE_TAG: "latest"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4317"
+  OTEL_SERVICE_NAME: "perrychick"
+  OTEL_RESOURCE_ATTRIBUTES: "service.name=perrychick,service.version=1.0.0"
+  ASPNETCORE_ENVIRONMENT: "Development"
+  NODE_ENV: "development"
+  VITE_API_BASE_URL: "http://localhost:5000/api"
   VITE_KEYCLOAK_URL: "http://localhost:8080"
   VITE_KEYCLOAK_REALM: "perrychick"
   VITE_KEYCLOAK_CLIENT_ID: "perrychick-frontend"
+  KUBERNETES_REDIS_URL: "redis:6379"
+  KUBERNETES_KEYCLOAK_URL: "http://keycloak:8080"
+  KUBERNETES_PROMETHEUS_URL: "http://prometheus:9090"
+  KUBERNETES_GRAFANA_URL: "http://grafana:3000"
+  KUBERNETES_JAEGER_URL: "http://jaeger-query:16686"
+  KUBERNETES_STRAPI_URL: "http://strapi:1337"
+  KUBERNETES_OTEL_ENDPOINT: "http://otel-collector:4317"

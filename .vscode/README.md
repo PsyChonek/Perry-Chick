@@ -18,7 +18,7 @@ The project includes comprehensive VS Code configuration:
 - Project-specific settings aligned with Perry Chick coding standards
 - Tab-based indentation (4 spaces) with 80-character line limit
 - Auto-formatting with Prettier
-- Language-specific configurations for C#, Vue.js, TypeScript, YAML, etc.
+- Language-specific configurations for C#, SvelteKit, TypeScript, YAML, etc.
 - Docker and Kubernetes integration settings
 
 ### `.vscode/tasks.json`
@@ -48,7 +48,7 @@ Debug configurations for:
 Recommended extensions for:
 
 - C# development (C# DevKit, OmniSharp)
-- Vue.js development (Volar, TypeScript Vue Plugin)
+- SvelteKit development (Svelte extension, Tailwind CSS)
 - Docker & Kubernetes tooling
 - Git integration (GitLens)
 - Database tools (PostgreSQL)
@@ -103,7 +103,7 @@ Use the `.vscode/api-requests.http` file with the REST Client extension:
 The workspace is organized into logical folders:
 
 - **Perry Chick (Root)**: Main project files
-- **Frontend (Vue.js)**: Vue.js application
+- **Frontend (SvelteKit)**: SvelteKit application
 - **Backend (C# API)**: .NET Minimal API
 - **Notifications Service**: Notification microservice
 - **Kubernetes Manifests**: K8s deployment files

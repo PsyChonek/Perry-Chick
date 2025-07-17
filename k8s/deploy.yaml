@@ -193,7 +193,7 @@ metadata:
   labels:
     app: perrychick-backend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: perrychick-backend
@@ -284,7 +284,7 @@ metadata:
   labels:
     app: perrychick-frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: perrychick-frontend
@@ -423,8 +423,11 @@ spec:
     spec:
       containers:
         - name: strapi
-          image: strapi/strapi:latest
+          image: perrychick-strapi:latest
+          imagePullPolicy: Never
           env:
+            - name: NODE_ENV
+              value: "production"
             - name: DATABASE_CLIENT
               value: "postgres"
             - name: DATABASE_HOST
@@ -446,6 +449,8 @@ spec:
                 secretKeyRef:
                   name: perrychick-secrets
                   key: POSTGRES_PASSWORD
+            - name: DATABASE_SSL
+              value: "false"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
@@ -466,6 +471,11 @@ spec:
                 secretKeyRef:
                   name: perrychick-secrets
                   key: STRAPI_API_TOKEN_SALT
+            - name: TRANSFER_TOKEN_SALT
+              valueFrom:
+                secretKeyRef:
+                  name: perrychick-secrets
+                  key: STRAPI_TRANSFER_TOKEN_SALT
           ports:
             - containerPort: 1337
           resources:
@@ -766,10 +776,12 @@ spec:
           volumeMounts:
             - name: grafana-storage
               mountPath: /var/lib/grafana
-            - name: grafana-provisioning
-              mountPath: /etc/grafana/provisioning
-            - name: grafana-dashboards
+            - name: grafana-datasources
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-dashboards-config
               mountPath: /etc/grafana/provisioning/dashboards
+            - name: grafana-dashboards
+              mountPath: /var/lib/grafana/dashboards
           resources:
             requests:
               memory: "256Mi"
@@ -780,9 +792,18 @@ spec:
       volumes:
         - name: grafana-storage
           emptyDir: {}
-        - name: grafana-provisioning
+        - name: grafana-datasources
           configMap:
             name: grafana-provisioning
+            items:
+              - key: datasources.yaml
+                path: datasources.yaml
+        - name: grafana-dashboards-config
+          configMap:
+            name: grafana-provisioning
+            items:
+              - key: dashboards.yaml
+                path: dashboards.yaml
         - name: grafana-dashboards
           configMap:
             name: grafana-dashboards
@@ -817,7 +838,7 @@ data:
         updateIntervalSeconds: 10
         allowUiUpdates: true
         options:
-          path: /etc/grafana/provisioning/dashboards
+          path: /var/lib/grafana/dashboards
 ---
 # NOTE: Grafana Dashboard ConfigMap is managed separately
 # Run 'scripts/deploy-with-dashboards.ps1' to deploy with dashboards from separate files

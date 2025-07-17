@@ -5,28 +5,36 @@
 			"path": "."
 		},
 		{
-			"name": "Frontend (Vue.js)",
-			"path": "./frontend"
+			"name": "Frontend (SvelteKit)",
+			"path": "frontend"
 		},
 		{
 			"name": "Backend (C# API)",
-			"path": "./backend"
+			"path": "backend"
 		},
 		{
 			"name": "Notifications Service",
-			"path": "./notifications"
+			"path": "notifications"
 		},
 		{
 			"name": "Kubernetes Manifests",
-			"path": "./k8s"
+			"path": "k8s"
 		},
 		{
-			"name": "Documentation",
-			"path": "./.github"
+			"name": "strapi",
+			"path": "strapi"
 		},
 		{
 			"name": "Monitoring",
-			"path": "./monitoring"
+			"path": "monitoring"
+		},
+		{
+			"name": "Documentation",
+			"path": "docs"
+		},
+		{
+			"name": "Scripts",
+			"path": "scripts"
 		}
 	],
 	"settings": {
@@ -47,13 +55,14 @@
 			"**/.git": true,
 			"**/dist": true,
 			"**/build": true
-		}
+		},
+		"powershell.cwd": "Perry Chick (Root)"
 	},
 	"extensions": {
 		"recommendations": [
 			"ms-dotnettools.csharp",
 			"ms-dotnettools.csdevkit",
-			"vue.volar",
+			"svelte.svelte-vscode",
 			"esbenp.prettier-vscode",
 			"ms-azuretools.vscode-docker",
 			"ms-kubernetes-tools.vscode-kubernetes-tools",

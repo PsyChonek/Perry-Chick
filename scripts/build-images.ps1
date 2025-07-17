@@ -18,18 +18,29 @@ Write-Host "🐳 Building Perry Chick Docker Images..." -ForegroundColor Green
 if ($UseMinikube) {
     Write-Host "⚙️  Configuring Docker to use Minikube's daemon..." -ForegroundColor Yellow
     try {
-        # Set Docker environment variables for Minikube
-        $env:DOCKER_TLS_VERIFY = "1"
-        $env:DOCKER_HOST = "tcp://$(minikube ip):2376"
-        $env:DOCKER_CERT_PATH = "$(minikube docker-env --format powershell | Select-String 'DOCKER_CERT_PATH' | ForEach-Object { $_.ToString().Split('=')[1].Trim('"') })"
-        $env:MINIKUBE_ACTIVE_DOCKERD = "minikube"
+        # Check if Minikube is running
+        $minikubeStatus = minikube status --format="{{.Host}}" 2>$null
+        if ($minikubeStatus -ne "Running") {
+            Write-Host "❌ Minikube is not running. Please start Minikube first." -ForegroundColor Red
+            Write-Host "   Run: minikube start" -ForegroundColor Cyan
+            exit 1
+        }
 
-        # Alternative: Use minikube docker-env command
-        minikube docker-env --shell powershell | Invoke-Expression
-        Write-Host "✅ Configured to use Minikube's Docker daemon" -ForegroundColor Green
+        # Use minikube docker-env to set environment
+        Write-Host "Setting Docker environment for Minikube..." -ForegroundColor Gray
+        & minikube docker-env --shell powershell | Invoke-Expression
+
+        # Verify Docker connection
+        docker version --format "{{.Server.Version}}" 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "✅ Successfully configured to use Minikube's Docker daemon" -ForegroundColor Green
+        } else {
+            Write-Host "⚠️  Docker connection failed, using local Docker" -ForegroundColor Yellow
+        }
     }
     catch {
-        Write-Host "⚠️  Failed to configure Minikube Docker environment, using local Docker" -ForegroundColor Yellow
+        Write-Host "⚠️  Failed to configure Minikube Docker environment: $($_.Exception.Message)" -ForegroundColor Yellow
+        Write-Host "   Using local Docker instead" -ForegroundColor Yellow
     }
 }
 
@@ -37,7 +48,8 @@ if ($UseMinikube) {
 $dockerFiles = @(
     @{ Name = "Backend"; Path = "backend/Dockerfile"; Image = "perrychick-backend:latest" },
     @{ Name = "Frontend"; Path = "frontend/Dockerfile"; Image = "perrychick-frontend:latest" },
-    @{ Name = "Notifications"; Path = "notifications/Dockerfile"; Image = "perrychick-notifications:latest" }
+    @{ Name = "Notifications"; Path = "notifications/Dockerfile"; Image = "perrychick-notifications:latest" },
+    @{ Name = "Strapi"; Path = "strapi/Dockerfile"; Image = "perrychick-strapi:latest" }
 )
 
 foreach ($dockerfile in $dockerFiles) {
@@ -72,4 +84,4 @@ docker images | Select-String "perrychick-"
 Write-Host ""
 Write-Host "Next steps:" -ForegroundColor Yellow
 Write-Host "  1. Update your Kubernetes deployment: kubectl apply -f k8s/deploy.yaml" -ForegroundColor Cyan
-Write-Host "  2. Or run: kubectl rollout restart deployment/perrychick-backend deployment/perrychick-frontend deployment/perrychick-notifications" -ForegroundColor Cyan
+Write-Host "  2. Or run: kubectl rollout restart deployment/perrychick-backend deployment/perrychick-frontend deployment/perrychick-notifications deployment/strapi" -ForegroundColor Cyan

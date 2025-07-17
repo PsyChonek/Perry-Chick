@@ -5,9 +5,9 @@
     "ms-dotnettools.csdevkit",
     "ms-dotnettools.vscode-dotnet-runtime",
 
-    // Vue.js Development
-    "vue.volar",
-    "vue.vscode-typescript-vue-plugin",
+    // SvelteKit Development
+    "svelte.svelte-vscode",
+    "bradlc.vscode-tailwindcss",
 
     // JavaScript/TypeScript
     "esbenp.prettier-vscode",

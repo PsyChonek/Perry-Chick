@@ -77,7 +77,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Vue.js
+# SvelteKit
 dist/
 dist-ssr/
 *.local

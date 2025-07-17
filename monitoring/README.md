@@ -41,7 +41,7 @@ Use the VS Code task: **"Create Dashboard ConfigMap"**
 
 After deployment with port forwarding:
 
-- **Grafana**: http://localhost:3001 (admin/adminpassword)
+- **Grafana**: http://localhost:3001
 - **Prometheus**: http://localhost:9090
 
 ## Dashboard Overview

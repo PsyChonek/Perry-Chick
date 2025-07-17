@@ -19,7 +19,7 @@ This project is public and uses open-source tools and public Docker images for e
 
 ## Tech Stack
 
-- **Frontend:** Vue.js (Vue 3 with Pinia and Vue Router).
+- **Frontend:** SvelteKit with TailwindCSS.
 - **Backend:** C# Minimal API (.NET 8+ with EF Core for DB migrations).
 - **Database:** PostgreSQL (code-first schema via EF Core).
 - **Authentication:** Keycloak.
@@ -38,6 +38,10 @@ This project is public and uses open-source tools and public Docker images for e
 - Node.js (for frontend)
 - Git
 
+## Documentation
+
+- **[Environment Configuration Management](docs/environment-config.md)** - Complete guide for managing environment variables and configuration synchronization between `.env.local` and Kubernetes
+
 ## Quick Start
 
 1. **Start Minikube and deploy everything:**
@@ -55,7 +59,7 @@ This project is public and uses open-source tools and public Docker images for e
    ```
 
 3. **View monitoring dashboards:**
-   - Grafana: http://localhost:3001 (admin/adminpassword)
+   - Grafana: http://localhost:3001
    - Pre-configured dashboards in "Perry Chick" folder
    - Prometheus: http://localhost:9090
    - Jaeger: http://localhost:16686

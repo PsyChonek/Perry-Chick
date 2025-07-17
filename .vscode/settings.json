@@ -16,7 +16,7 @@
   "omnisharp.enableRoslynAnalyzers": true,
   "omnisharp.enableEditorConfigSupport": true,
 
-  // Vue.js specific settings
+  // SvelteKit specific settings
   "vetur.format.defaultFormatter.html": "prettier",
   "vetur.format.defaultFormatter.css": "prettier",
   "vetur.format.defaultFormatter.js": "prettier",
@@ -79,7 +79,7 @@
     "editor.tabSize": 4,
     "editor.insertSpaces": false
   },
-  "[vue]": {
+  "[svelte]": {
     "editor.tabSize": 4,
     "editor.insertSpaces": false
   },

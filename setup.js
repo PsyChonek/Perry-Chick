@@ -174,8 +174,8 @@ directories.forEach((dir) => {
 
 // Install global npm packages
 console.log("\n📦 Installing global npm packages...");
-if (runCommand("npm install -g @vue/cli vue-tsc typescript")) {
-	console.log("✅ Vue CLI and TypeScript tools installed");
+if (runCommand("npm install -g @sveltejs/kit typescript")) {
+	console.log("✅ SvelteKit and TypeScript tools installed");
 } else {
 	console.log("⚠️  Some npm packages may already be installed");
 }
