@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
 using Serilog;
 using PerryChick.Api.Data;
 using PerryChick.Api.Models;
@@ -134,8 +133,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		{
 			OnTokenValidated = context =>
 			{
-				Log.Information("Token validated successfully for user: {User}",
-					context.Principal?.Identity?.Name ?? "Unknown");
+				var user = context.Principal?.FindFirst("preferred_username")?.Value
+						?? context.Principal?.FindFirst("name")?.Value
+						?? context.Principal?.FindFirst("sub")?.Value
+						?? context.Principal?.Identity?.Name
+						?? "Unknown";
+
+				// Debug: Log all available claims
+				var claims = context.Principal?.Claims?.Select(c => $"{c.Type}={c.Value}").ToArray() ?? Array.Empty<string>();
+				Log.Information("Token validated successfully for user: {User}. Available claims: {Claims}", user, string.Join(", ", claims));
+
 				return Task.CompletedTask;
 			},
 			OnAuthenticationFailed = context =>
@@ -248,17 +255,30 @@ app.MapGet("/api/auth/whoami", (IUserContext userContext) =>
 .WithTags("Authentication")
 .RequireAuthorization();
 
-// User endpoints
-app.MapGet("/api/users", async (AppDbContext db) =>
+// User endpoints (Admin only)
+app.MapGet("/api/users", async (HttpContext context) =>
 {
-	return await db.Users.ToListAsync();
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
+	var users = await db.Users.ToListAsync();
+	return Results.Ok(users);
 })
 .WithName("GetUsers")
 .WithTags("Users")
 .RequireAuthorization();
 
-app.MapGet("/api/users/{id}", async (int id, AppDbContext db) =>
+app.MapGet("/api/users/{id}", async (int id, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	var user = await db.Users.FindAsync(id);
 	return user is not null ? Results.Ok(user) : Results.NotFound();
 })
@@ -277,8 +297,14 @@ app.MapPost("/api/users", async (User user, AppDbContext db) =>
 .WithTags("Users")
 .AllowAnonymous(); // Allow user registration without authentication
 
-app.MapPut("/api/users/{id}", async (int id, User inputUser, AppDbContext db) =>
+app.MapPut("/api/users/{id}", async (int id, User inputUser, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	var user = await db.Users.FindAsync(id);
 	if (user is null) return Results.NotFound();
 
@@ -293,8 +319,14 @@ app.MapPut("/api/users/{id}", async (int id, User inputUser, AppDbContext db) =>
 .WithTags("Users")
 .RequireAuthorization();
 
-app.MapDelete("/api/users/{id}", async (int id, AppDbContext db) =>
+app.MapDelete("/api/users/{id}", async (int id, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	var user = await db.Users.FindAsync(id);
 	if (user is null) return Results.NotFound();
 
@@ -324,8 +356,14 @@ app.MapGet("/api/items/{id}", async (int id, AppDbContext db) =>
 .WithTags("Store Items")
 .RequireAuthorization();
 
-app.MapPost("/api/items", async (StoreItem item, AppDbContext db) =>
+app.MapPost("/api/items", async (StoreItem item, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	item.CreatedAt = DateTime.UtcNow;
 	db.Items.Add(item);
 	await db.SaveChangesAsync();
@@ -335,8 +373,14 @@ app.MapPost("/api/items", async (StoreItem item, AppDbContext db) =>
 .WithTags("Store Items")
 .RequireAuthorization();
 
-app.MapPut("/api/items/{id}", async (int id, StoreItem inputItem, AppDbContext db) =>
+app.MapPut("/api/items/{id}", async (int id, StoreItem inputItem, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	var item = await db.Items.FindAsync(id);
 	if (item is null) return Results.NotFound();
 
@@ -353,8 +397,14 @@ app.MapPut("/api/items/{id}", async (int id, StoreItem inputItem, AppDbContext d
 .WithTags("Store Items")
 .RequireAuthorization();
 
-app.MapDelete("/api/items/{id}", async (int id, AppDbContext db) =>
+app.MapDelete("/api/items/{id}", async (int id, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
+	if (!userContext.IsAuthenticated || !userContext.HasRole("admin"))
+		return Results.Forbid();
+
 	var item = await db.Items.FindAsync(id);
 	if (item is null) return Results.NotFound();
 
@@ -367,8 +417,11 @@ app.MapDelete("/api/items/{id}", async (int id, AppDbContext db) =>
 .RequireAuthorization();
 
 // Shopping Cart endpoints
-app.MapGet("/api/cart", async (IUserContext userContext, AppDbContext db) =>
+app.MapGet("/api/cart", async (HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
 	if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
 		return Results.Unauthorized();
 
@@ -421,8 +474,11 @@ app.MapGet("/api/cart/{userId}", async (int userId, AppDbContext db) =>
 .WithTags("Shopping Cart")
 .RequireAuthorization();
 
-app.MapPost("/api/cart/items", async (ShoppingCartItem cartItem, IUserContext userContext, AppDbContext db) =>
+app.MapPost("/api/cart/items", async (ShoppingCartItem cartItem, HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
 	if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
 		return Results.Unauthorized();
 
@@ -498,8 +554,11 @@ app.MapDelete("/api/cart/items/{itemId}", async (int itemId, AppDbContext db) =>
 .WithTags("Shopping Cart")
 .RequireAuthorization();
 
-app.MapDelete("/api/cart/clear", async (IUserContext userContext, AppDbContext db) =>
+app.MapDelete("/api/cart/clear", async (HttpContext context) =>
 {
+	var userContext = context.RequestServices.GetRequiredService<IUserContext>();
+	var db = context.RequestServices.GetRequiredService<AppDbContext>();
+
 	if (!userContext.IsAuthenticated || !userContext.UserId.HasValue)
 		return Results.Unauthorized();
 

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace PerryChick.Api.Services;
 
@@ -42,6 +43,25 @@ public class UserContext : IUserContext
 			var user = _httpContextAccessor.HttpContext?.User;
 			if (user == null) return Enumerable.Empty<string>();
 
+			// First try to get roles from realm_access claim (Keycloak format)
+			var realmAccessClaim = user.FindFirst("realm_access")?.Value;
+			if (!string.IsNullOrEmpty(realmAccessClaim))
+			{
+				try
+				{
+					var realmAccess = JsonSerializer.Deserialize<JsonElement>(realmAccessClaim);
+					if (realmAccess.TryGetProperty("roles", out var rolesElement) && rolesElement.ValueKind == JsonValueKind.Array)
+					{
+						return rolesElement.EnumerateArray().Select(role => role.GetString()).Where(r => !string.IsNullOrEmpty(r))!;
+					}
+				}
+				catch (JsonException)
+				{
+					// If JSON parsing fails, fall back to other methods
+				}
+			}
+
+			// Fallback to standard role claims
 			return user.FindAll("realm_access.roles")?.Select(c => c.Value)
 				   ?? user.FindAll(ClaimTypes.Role)?.Select(c => c.Value)
 				   ?? Enumerable.Empty<string>();

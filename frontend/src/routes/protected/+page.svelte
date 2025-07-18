@@ -1,7 +1,15 @@
 <!--
 Protected Store Management Page
 
-This page demonstrates authentication-protected content using the AuthGuard component.
+This page demonstrates authentication-protected content using the Aut<AuthGuard requireRoles={['admin']}>
+	<div class="store-management">
+		<div class="header">
+			<h1>🏪 Store Management</h1>
+			{#if $userInfo}
+				<p class="welcome">Welcome back, {$userInfo.firstName || $userInfo.username}!</p>
+				<p class="admin-notice">👑 Administrator Access</p>
+			{/if}
+		</div>.
 Users must be logged in to view and manage store items.
 -->
 
@@ -108,7 +116,7 @@ Users must be logged in to view and manage store items.
 	<title>Store Management - Perry Chick</title>
 </svelte:head>
 
-<AuthGuard requireRoles={['farmer', 'admin']}>
+<AuthGuard requireRoles={['admin']}>
 	<div class="store-management">
 		<div class="header">
 			<h1>� Store Management</h1>
