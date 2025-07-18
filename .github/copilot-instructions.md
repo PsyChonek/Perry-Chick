@@ -4,10 +4,10 @@
 
 Perry Chick is a **microservices e-commerce application** running on Kubernetes with the following key components:
 
-- **Frontend**: SvelteKit (not Vue.js as docs suggest) with TailwindCSS (`frontend/`)
+- **Frontend**: SvelteKit with TailwindCSS and OpenAPI client generation (`frontend/`)
 - **Backend**: C# Minimal API with EF Core (.NET 8) (`backend/`)
-- **Notifications**: C# service with Redis queue (`notifications/`)
-- **Auth**: Keycloak OAuth2/OpenID Connect
+- **Notifications**: C# service (minimal implementation) (`notifications/`)
+- **Auth**: Keycloak OAuth2/OpenID Connect with custom SvelteKit integration
 - **CMS**: Strapi headless CMS
 - **Database**: PostgreSQL with EF Core code-first migrations
 - **Monitoring**: OpenTelemetry → Jaeger/Prometheus/Grafana
@@ -50,7 +50,25 @@ Perry Chick is a **microservices e-commerce application** running on Kubernetes 
 
 - **Code-first**: Define models in `backend/Models/`, migrations auto-generated
 - **Context**: `backend/Data/AppDbContext.cs` with seeded demo data
+- **Current Models**: `User`, `StoreItem`
 - **Pattern**: PostgreSQL with precision decimals, UTC timestamps, cascade deletes
+- **Relationships**: `StoreItem.UserId` → `User.Id` with cascade delete
+
+### SvelteKit Frontend Architecture
+
+- **Auth Guard Pattern**: `AuthGuard.svelte` component wraps protected routes
+- **API Client**: Auto-generated from OpenAPI via `npm run generate-api`
+- **Auth Integration**: Custom Keycloak service in `src/lib/auth/keycloak.ts`
+- **Store Pattern**: Svelte stores for auth state (`isAuthenticated`, `userInfo`, etc.)
+- **Component Structure**: Reusable components in `src/lib/components/`
+
+### Authentication Implementation
+
+- **Keycloak Config**: Hardcoded to `localhost:8080/perrychick` realm
+- **Frontend Flow**: OAuth2 redirect → JWT validation → Svelte stores
+- **Backend JWT**: Validates against Keycloak authority, audience-based
+- **User Info**: Loads profile from Keycloak, stores in reactive stores
+- **Role Checking**: `keycloakService.hasAnyRole()` for permission logic
 
 ### Configuration Loading
 
@@ -58,6 +76,14 @@ Perry Chick is a **microservices e-commerce application** running on Kubernetes 
 - **K8s**: ConfigMap (non-sensitive) + Secrets (passwords/keys) auto-generated from `.env.local`
 - **Frontend**: Environment passed via build process
 - **Critical**: Never edit `k8s/configmap.yaml` manually - it's generated from `.env.local`
+- **Sync Script**: `scripts/update-env-config.ps1` manages ConfigMap/Secret sync
+
+### VS Code Integration
+
+- **Tasks**: Pre-configured for all services (`Debug Backend`, `Debug Frontend`, etc.)
+- **Background Tasks**: Use `isBackground: true` for long-running services
+- **Port Forwarding**: `Forward All Services` task handles all Kubernetes port forwards
+- **Task Dependencies**: `Generate API Client` depends on `Debug Backend` running
 
 ### Monitoring & Observability
 
@@ -106,3 +132,5 @@ Frontend ↔ Backend API ↔ PostgreSQL (EF Core) ↔ Monitoring (OpenTelemetry)
 **Frontend components**: SvelteKit components in `frontend/src/routes/`
 **Monitoring**: Update dashboards in `monitoring/grafana/dashboards/`
 **Deploy changes**: Use `scripts/deploy-full.ps1` or VS Code "Deploy Full" task
+
+Do not use emojis in code comments or documentation. Keep comments clear and professional.

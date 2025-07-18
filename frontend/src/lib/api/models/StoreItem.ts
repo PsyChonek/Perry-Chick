@@ -16,80 +16,94 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface User
+ * @interface StoreItem
  */
-export interface User {
+export interface StoreItem {
     /**
      * 
      * @type {number}
-     * @memberof User
+     * @memberof StoreItem
      */
     id?: number;
     /**
      * 
      * @type {string}
-     * @memberof User
+     * @memberof StoreItem
      */
-    username: string;
+    name: string;
     /**
      * 
      * @type {string}
-     * @memberof User
+     * @memberof StoreItem
      */
-    email: string;
+    description: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof StoreItem
+     */
+    price?: number;
+    /**
+     * 
+     * @type {number}
+     * @memberof StoreItem
+     */
+    stock?: number;
     /**
      * 
      * @type {Date}
-     * @memberof User
+     * @memberof StoreItem
      */
     createdAt?: Date;
     /**
      * 
      * @type {Date}
-     * @memberof User
+     * @memberof StoreItem
      */
     updatedAt?: Date | null;
     /**
      * 
      * @type {boolean}
-     * @memberof User
+     * @memberof StoreItem
      */
     isActive?: boolean;
 }
 
 /**
- * Check if a given object implements the User interface.
+ * Check if a given object implements the StoreItem interface.
  */
-export function instanceOfUser(value: object): value is User {
-    if (!('username' in value) || value['username'] === undefined) return false;
-    if (!('email' in value) || value['email'] === undefined) return false;
+export function instanceOfStoreItem(value: object): value is StoreItem {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('description' in value) || value['description'] === undefined) return false;
     return true;
 }
 
-export function UserFromJSON(json: any): User {
-    return UserFromJSONTyped(json, false);
+export function StoreItemFromJSON(json: any): StoreItem {
+    return StoreItemFromJSONTyped(json, false);
 }
 
-export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User {
+export function StoreItemFromJSONTyped(json: any, ignoreDiscriminator: boolean): StoreItem {
     if (json == null) {
         return json;
     }
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
-        'username': json['username'],
-        'email': json['email'],
+        'name': json['name'],
+        'description': json['description'],
+        'price': json['price'] == null ? undefined : json['price'],
+        'stock': json['stock'] == null ? undefined : json['stock'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
         'isActive': json['isActive'] == null ? undefined : json['isActive'],
     };
 }
 
-export function UserToJSON(json: any): User {
-    return UserToJSONTyped(json, false);
+export function StoreItemToJSON(json: any): StoreItem {
+    return StoreItemToJSONTyped(json, false);
 }
 
-export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolean = false): any {
+export function StoreItemToJSONTyped(value?: StoreItem | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -97,8 +111,10 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
     return {
         
         'id': value['id'],
-        'username': value['username'],
-        'email': value['email'],
+        'name': value['name'],
+        'description': value['description'],
+        'price': value['price'],
+        'stock': value['stock'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] === null ? null : ((value['updatedAt'] as any)?.toISOString()),
         'isActive': value['isActive'],

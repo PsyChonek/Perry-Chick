@@ -1,11 +1,13 @@
-.openapi-generator-ignore
-apis/ChicksApi.ts
+apis/AuthenticationApi.ts
 apis/DevelopmentApi.ts
 apis/HealthApi.ts
+apis/ShoppingCartApi.ts
+apis/StoreItemsApi.ts
 apis/UsersApi.ts
 apis/index.ts
 index.ts
-models/Chick.ts
+models/ShoppingCartItem.ts
+models/StoreItem.ts
 models/StringDateTimeStringfAnonymousType1.ts
 models/StringStringStringDateTimefAnonymousType0.ts
 models/StringStringStringStringfAnonymousType2.ts

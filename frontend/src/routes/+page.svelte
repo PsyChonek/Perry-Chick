@@ -1,17 +1,12 @@
-<script>
+<script lang="ts">
 	import { onMount } from 'svelte';
 	import { api } from '$lib';
-	import LoginButton from '$lib/components/LoginButton.svelte';
+	import type { ApiConfig, ConfigStatus } from '$lib/types';
+	import PageLayout from '$lib/components/PageLayout.svelte';
 
 	let apiStatus = 'Checking...';
-	/**
-	 * @type {import("$lib").ApiConfig | null}
-	 */
-	let backendInfo = null;
-	/**
-	 * @type {import("$lib").ConfigStatus | null}
-	 */
-	let configStatus = null;
+	let backendInfo: ApiConfig | null = null;
+	let configStatus: ConfigStatus | null = null;
 
 	onMount(async () => {
 		// Test health endpoint
@@ -36,51 +31,22 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Perry Chick - Premium Snacks & Delights</title>
-	<meta
-		name="description"
-		content="Welcome to Perry Chick - Your premier destination for gourmet popcorn and ham"
-	/>
-</svelte:head>
-
-<main class="min-h-screen bg-gradient-to-br from-amber-50 to-orange-100">
-	<!-- Header -->
-	<header class="border-b border-amber-200 bg-white shadow-sm">
-		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-			<div class="flex items-center justify-between py-6">
-				<div class="flex items-center">
-					<h1 class="text-3xl font-bold text-amber-900">🐥 Perry Chick</h1>
-					<span class="ml-3 rounded-full bg-amber-100 px-2 py-1 text-sm text-amber-600"
-						>Premium Snacks</span
-					>
-				</div>
-				<nav class="hidden space-x-8 md:flex">
-					<a href="/shop" class="font-medium text-amber-700 hover:text-amber-900">Shop</a>
-					<a href="/about" class="font-medium text-amber-700 hover:text-amber-900"
-						>About</a
-					>
-					<a href="/contact" class="font-medium text-amber-700 hover:text-amber-900"
-						>Contact</a
-					>
-					<a href="/protected" class="font-medium text-amber-700 hover:text-amber-900"
-						>Chick Management</a
-					>
-					<LoginButton />
-				</nav>
-			</div>
-		</div>
-	</header>
-
+<PageLayout
+	title="Perry Store - Premium Items & Quality Goods"
+	description="Welcome to Perry Store - Your premier destination for quality items and excellent service"
+	bgColor="bg-gradient-to-br from-amber-50 to-orange-100"
+	padding="px-0 py-0"
+	maxWidth="full"
+>
 	<!-- Hero Section -->
 	<section class="relative px-4 py-20 sm:px-6 lg:px-8">
 		<div class="mx-auto max-w-7xl text-center">
-			<h2 class="mb-6 text-5xl font-bold text-amber-900 md:text-6xl">
-				Welcome to Perry Chick
-			</h2>
+			<h1 class="mb-6 text-5xl font-bold text-amber-900 md:text-6xl">
+				Welcome to Perry Store
+			</h1>
 			<p class="mx-auto mb-8 max-w-3xl text-xl text-amber-700 md:text-2xl">
-				Discover our premium collection of gourmet popcorn and artisanal ham. Quality
-				ingredients, exceptional taste, delivered fresh to your door.
+				Discover our premium collection of quality items. From delicious snacks to everyday
+				essentials, we deliver excellence with every order.
 			</p>
 			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
 				<a
@@ -116,9 +82,9 @@
 				</div>
 				<div class="text-center">
 					<div class="mb-4 text-4xl">🥓</div>
-					<h4 class="mb-2 text-xl font-semibold text-amber-800">Artisanal Ham</h4>
+					<h4 class="mb-2 text-xl font-semibold text-amber-800">Artisanal bacon</h4>
 					<p class="text-amber-600">
-						Carefully cured and smoked ham using traditional methods for exceptional
+						Carefully cured and smoked bacon using traditional methods for exceptional
 						taste and quality.
 					</p>
 				</div>
@@ -184,21 +150,7 @@
 			{/if}
 		</div>
 	</section>
-
-	<!-- Footer -->
-	<footer class="bg-amber-900 px-4 py-12 text-amber-100 sm:px-6 lg:px-8">
-		<div class="mx-auto max-w-7xl text-center">
-			<h2 class="mb-4 text-2xl font-bold">🐥 Perry Chick</h2>
-			<p class="mb-4">Premium snacks delivered with love</p>
-			<div class="flex justify-center space-x-6 text-sm">
-				<a href="/privacy" class="transition-colors hover:text-white">Privacy Policy</a>
-				<a href="/terms" class="transition-colors hover:text-white">Terms of Service</a>
-				<a href="/support" class="transition-colors hover:text-white">Support</a>
-			</div>
-			<p class="mt-6 text-sm text-amber-300">© 2025 Perry Chick. All rights reserved.</p>
-		</div>
-	</footer>
-</main>
+</PageLayout>
 
 <style>
 	:global(body) {

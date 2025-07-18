@@ -6,8 +6,9 @@
  */
 
 import Keycloak, { type KeycloakProfile } from 'keycloak-js';
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import { browser } from '$app/environment';
+import { replaceState } from '$app/navigation';
 
 // Configuration from environment or defaults
 const KEYCLOAK_CONFIG = {
@@ -36,6 +37,7 @@ export const userRoles = derived(keycloakInstance, ($keycloak) => {
 class KeycloakService {
 	private keycloak: Keycloak | null = null;
 	private refreshTokenInterval: number | null = null;
+	private initialized: boolean = false;
 
 	/**
 	 * Initialize Keycloak
@@ -43,9 +45,18 @@ class KeycloakService {
 	async init(): Promise<boolean> {
 		if (!browser) return false;
 
+		// Prevent multiple initializations
+		if (this.initialized) {
+			console.log('Keycloak already initialized');
+			return this.keycloak?.authenticated || false;
+		}
+
 		try {
 			isLoading.set(true);
 			authError.set(null);
+
+			// Note: Keycloak.js may show a SvelteKit warning about using history.replaceState()
+			// This is internal to Keycloak and cannot be avoided. The warning can be safely ignored.
 
 			// Create Keycloak instance
 			this.keycloak = new Keycloak({
@@ -54,14 +65,20 @@ class KeycloakService {
 				clientId: KEYCLOAK_CONFIG.clientId
 			});
 
-			// Initialize Keycloak
+			// Initialize Keycloak with better error handling
 			const authenticated = await this.keycloak.init({
 				onLoad: 'check-sso',
-				silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
-				checkLoginIframe: false, // Disable for development
-				enableLogging: true,
-				pkceMethod: 'S256'
+				checkLoginIframe: false, // Disable iframe checks to avoid sandbox warnings
+				checkLoginIframeInterval: 0, // Disable periodic iframe checks
+				enableLogging: false, // Disable verbose logging
+				pkceMethod: 'S256',
+				// Add response mode to avoid URL fragments
+				responseMode: 'query',
+				// Prevent Keycloak from manipulating browser history
+				flow: 'standard'
 			});
+
+			this.initialized = true;
 
 			// Update stores
 			keycloakInstance.set(this.keycloak);
@@ -75,11 +92,35 @@ class KeycloakService {
 			// Setup event listeners
 			this.setupEventListeners();
 
-			console.log('Keycloak initialized. Authenticated:', authenticated);
+			// Clean up auth parameters from URL after successful initialization
+			if (
+				window.location.search.includes('state=') ||
+				window.location.search.includes('code=') ||
+				window.location.search.includes('session_state=')
+			) {
+				console.log('Cleaning auth parameters from URL');
+				// Use SvelteKit's replaceState to avoid conflicts with router
+				try {
+					replaceState('', {});
+				} catch (error) {
+					console.warn('Failed to clean URL with SvelteKit replaceState:', error);
+					// Fallback: just log the issue, don't break authentication
+				}
+			}
+
+			console.log('Keycloak initialized successfully. Authenticated:', authenticated);
 			return authenticated;
 		} catch (error) {
 			console.error('Failed to initialize Keycloak:', error);
-			authError.set(`Failed to initialize authentication: ${error}`);
+
+			// Don't set error state if it's just a normal "not authenticated" state
+			if (error && error.toString().includes('login_required')) {
+				console.log('User not authenticated - this is normal');
+				isAuthenticated.set(false);
+			} else {
+				authError.set(`Authentication service unavailable. Please try again later.`);
+			}
+			this.initialized = true; // Mark as initialized even if failed
 			return false;
 		} finally {
 			isLoading.set(false);
@@ -163,12 +204,32 @@ class KeycloakService {
 	async loadUserInfo(): Promise<void> {
 		if (!this.keycloak?.authenticated) return;
 
+		// First try to use token information directly (more reliable)
+		if (this.keycloak?.tokenParsed) {
+			const tokenProfile = {
+				id: this.keycloak.tokenParsed.sub,
+				username:
+					this.keycloak.tokenParsed.preferred_username || this.keycloak.tokenParsed.name,
+				email: this.keycloak.tokenParsed.email,
+				firstName: this.keycloak.tokenParsed.given_name,
+				lastName: this.keycloak.tokenParsed.family_name,
+				emailVerified: this.keycloak.tokenParsed.email_verified
+			};
+			console.log('Using profile from token:', tokenProfile);
+			userInfo.set(tokenProfile);
+			authError.set(null);
+			return;
+		}
+
+		// Fallback: try to load from profile endpoint
 		try {
 			const profile = await this.keycloak.loadUserProfile();
+			console.log('Loaded user profile from endpoint:', profile);
 			userInfo.set(profile);
 		} catch (error) {
-			console.error('Failed to load user info:', error);
-			authError.set(`Failed to load user info: ${error}`);
+			console.error('Failed to load user profile from endpoint:', error);
+			// This is expected to fail sometimes, so we don't set an error
+			// since we already have the token information above
 		}
 	}
 

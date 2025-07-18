@@ -36,6 +36,23 @@ $Port = "8080"
 $Image = "quay.io/keycloak/keycloak:23.0"
 $RealmFile = "perrychick-realm.json"
 
+# Load environment variables from .env.local if it exists
+$EnvFile = ".env.local"
+if (Test-Path $EnvFile) {
+	Write-ColorOutput "📁 Loading environment variables from $EnvFile..." $Blue
+	Get-Content $EnvFile | ForEach-Object {
+		if ($_ -match "^([^#][^=]+)=(.*)$") {
+			$key = $Matches[1].Trim()
+			$value = $Matches[2].Trim()
+			[Environment]::SetEnvironmentVariable($key, $value, "Process")
+		}
+	}
+
+	# Override defaults with environment values if they exist
+	if ($env:KEYCLOAK_ADMIN) { $KeycloakUser = $env:KEYCLOAK_ADMIN }
+	if ($env:KEYCLOAK_ADMIN_PASSWORD) { $KeycloakPassword = $env:KEYCLOAK_ADMIN_PASSWORD }
+}
+
 # Colors for output
 $Red = "`e[31m"
 $Green = "`e[32m"
@@ -255,6 +272,10 @@ function Start-KeycloakContainer {
 			-e "KC_HOSTNAME_STRICT_HTTPS=false" `
 			-e "KC_HEALTH_ENABLED=true" `
 			-e "KC_METRICS_ENABLED=true" `
+			-e "KC_HTTP_CORS_ENABLED=$($env:KC_HTTP_CORS_ENABLED ?? 'true')" `
+			-e "KC_HTTP_CORS_ORIGINS=$($env:KC_HTTP_CORS_ORIGINS ?? 'http://localhost:5173,http://localhost:3000,http://localhost:8080')" `
+			-e "KC_HTTP_CORS_METHODS=$($env:KC_HTTP_CORS_METHODS ?? 'GET,POST,PUT,DELETE,OPTIONS')" `
+			-e "KC_HTTP_CORS_HEADERS=$($env:KC_HTTP_CORS_HEADERS ?? 'Origin,Accept,X-Requested-With,Content-Type,Access-Control-Request-Method,Access-Control-Request-Headers,Authorization')" `
 			-p "${Port}:8080" `
 			-v "${realmPath}:/opt/keycloak/data/import/realm.json:ro" `
 			$Image `

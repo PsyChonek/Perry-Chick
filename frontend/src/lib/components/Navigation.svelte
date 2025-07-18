@@ -1,31 +1,50 @@
 <!--
-Navigation Component with Authentication
+Navigation Component (Legacy)
 
-Reusable navigation bar that includes authentication status
+This component is now deprecated in favor of the Header component.
+It's kept for backward compatibility but should not be used in new code.
+Use Header.svelte instead for full header functionality.
 -->
 
 <script lang="ts">
 	import LoginButton from '$lib/components/LoginButton.svelte';
 	import { isAuthenticated } from '$lib/auth/keycloak';
+	import { page } from '$app/stores';
 
 	export let currentPage = '';
+
+	// Get current route for active link styling if currentPage is not provided
+	$: activeRoute = currentPage || $page.url.pathname;
+
+	function isActivePage(path: string): boolean {
+		return activeRoute === path;
+	}
 </script>
 
-<nav class="hidden items-center space-x-6 md:flex">
+<nav class="flex items-center space-x-6">
 	<a
 		href="/"
-		class="font-medium text-amber-700 hover:text-amber-900 {currentPage === 'home'
+		class="font-medium transition-colors {isActivePage('/')
 			? 'font-semibold text-amber-900'
-			: ''}"
+			: 'text-amber-700 hover:text-amber-900'}"
 	>
 		Home
 	</a>
 
 	<a
-		href="/api-example"
-		class="font-medium text-amber-700 hover:text-amber-900 {currentPage === 'api-example'
+		href="/shop"
+		class="font-medium transition-colors {isActivePage('/shop')
 			? 'font-semibold text-amber-900'
-			: ''}"
+			: 'text-amber-700 hover:text-amber-900'}"
+	>
+		Shop
+	</a>
+
+	<a
+		href="/api-example"
+		class="font-medium transition-colors {isActivePage('/api-example')
+			? 'font-semibold text-amber-900'
+			: 'text-amber-700 hover:text-amber-900'}"
 	>
 		API Demo
 	</a>
@@ -33,11 +52,11 @@ Reusable navigation bar that includes authentication status
 	{#if $isAuthenticated}
 		<a
 			href="/protected"
-			class="font-medium text-amber-700 hover:text-amber-900 {currentPage === 'protected'
+			class="font-medium transition-colors {isActivePage('/protected')
 				? 'font-semibold text-amber-900'
-				: ''}"
+				: 'text-amber-700 hover:text-amber-900'}"
 		>
-			🐥 Chick Management
+			Management
 		</a>
 	{/if}
 
@@ -45,7 +64,3 @@ Reusable navigation bar that includes authentication status
 		<LoginButton />
 	</div>
 </nav>
-
-<style>
-	/* Mobile menu could be added here in the future */
-</style>

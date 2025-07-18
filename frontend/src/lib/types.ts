@@ -2,13 +2,53 @@
 
 export interface User {
 	id: number;
-	name: string;
+	username: string;
 	email: string;
 	createdAt: string;
 	updatedAt?: string;
 	isActive: boolean;
 }
 
+export interface StoreItem {
+	id: number;
+	name: string;
+	description: string;
+	price: number;
+	stock: number;
+	createdAt: string;
+	updatedAt?: string;
+	isActive: boolean;
+}
+
+export interface ShoppingCart {
+	id: number;
+	userId: number;
+	createdAt: string;
+	updatedAt?: string;
+	isActive: boolean;
+	items: ShoppingCartItem[];
+}
+
+export interface ShoppingCartItem {
+	id: number;
+	shoppingCartId: number;
+	storeItemId: number;
+	quantity: number;
+	createdAt: string;
+	updatedAt?: string;
+	isActive: boolean;
+	storeItem: StoreItem;
+}
+
+export interface UserInfo {
+	userId?: number;
+	email?: string;
+	username?: string;
+	isAuthenticated: boolean;
+	roles: string[];
+}
+
+// Legacy interface for backward compatibility
 export interface Chick {
 	id: number;
 	name: string;

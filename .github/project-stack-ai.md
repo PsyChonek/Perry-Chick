@@ -5,7 +5,7 @@ This document outlines the tech stack for the "Perry Chick" e-shop project and p
 ## Project Overview
 
 - **App Name:** Perry Chick
-- **Description:** A Kubernetes-based e-commerce app for selling popcorn and ham. Includes frontend, backend, auth, CMS, notifications, and monitoring.
+- **Description:** A Kubernetes-based e-commerce app for selling popcorn and bacon. Includes frontend, backend, auth, CMS, notifications, and monitoring.
 - **Goals:** Build a scalable, observable online store with easy local dev (Minikube). Project is public, using open-source tools and public images.
 - **Constraints:** All services in one `deploy.yaml` for single-command apply. Use EF Core for DB migrations (code-first, no raw SQL schemas).
 
@@ -31,7 +31,7 @@ When prompting an AI for help (e.g., generating code, debugging, or ideas), copy
 **1. App Overview**
 
 - **App Name:** Perry Chick
-- **High-Level Description:** [e.g., "E-shop for popcorn and ham with auth, CMS, notifications, and monitoring."]
+- **High-Level Description:** [e.g., "E-shop for popcorn and bacon with auth, CMS, notifications, and monitoring."]
 - **Target Users:** [e.g., "Snack buyers and shop admin."]
 - **Key Features:** [List 3-5, e.g., "Product catalog, orders, email notifications."]
 

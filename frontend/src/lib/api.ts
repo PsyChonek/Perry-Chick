@@ -1,5 +1,16 @@
 import { browser } from '$app/environment';
-import type { ApiResponse, User, Chick, HealthCheck, ApiConfig, ConfigStatus } from './types.js';
+import type {
+	ApiResponse,
+	User,
+	StoreItem,
+	ShoppingCart,
+	ShoppingCartItem,
+	UserInfo,
+	Chick,
+	HealthCheck,
+	ApiConfig,
+	ConfigStatus
+} from './types.js';
 
 // API Configuration
 const API_BASE_URL = browser
@@ -136,15 +147,103 @@ class ApiClient {
 		});
 	}
 
-	// Chick endpoints
+	// Authentication endpoints
+	async whoAmI(): Promise<ApiResponse<UserInfo>> {
+		return this.request<UserInfo>('/api/auth/whoami');
+	}
+
+	// Store Item endpoints
+	async getStoreItems(): Promise<ApiResponse<StoreItem[]>> {
+		return this.request<StoreItem[]>('/api/items');
+	}
+
+	async getStoreItem(id: number): Promise<ApiResponse<StoreItem>> {
+		return this.request<StoreItem>(`/api/items/${id}`);
+	}
+
+	async createStoreItem(
+		item: Omit<StoreItem, 'id' | 'createdAt' | 'updatedAt'>
+	): Promise<ApiResponse<StoreItem>> {
+		return this.request<StoreItem>('/api/items', {
+			method: 'POST',
+			body: JSON.stringify(item)
+		});
+	}
+
+	async updateStoreItem(
+		id: number,
+		item: Partial<Omit<StoreItem, 'id' | 'createdAt'>>
+	): Promise<ApiResponse<void>> {
+		return this.request<void>(`/api/items/${id}`, {
+			method: 'PUT',
+			body: JSON.stringify(item)
+		});
+	}
+
+	async deleteStoreItem(id: number): Promise<ApiResponse<void>> {
+		return this.request<void>(`/api/items/${id}`, {
+			method: 'DELETE'
+		});
+	}
+
+	// Shopping Cart endpoints
+	async getMyCart(): Promise<ApiResponse<ShoppingCart>> {
+		return this.request<ShoppingCart>('/api/cart');
+	}
+
+	async getCart(userId: number): Promise<ApiResponse<ShoppingCart>> {
+		return this.request<ShoppingCart>(`/api/cart/${userId}`);
+	}
+
+	async addItemToCart(
+		item: Pick<ShoppingCartItem, 'storeItemId' | 'quantity'>
+	): Promise<ApiResponse<ShoppingCartItem>> {
+		return this.request<ShoppingCartItem>('/api/cart/items', {
+			method: 'POST',
+			body: JSON.stringify(item)
+		});
+	}
+
+	async updateCartItem(
+		itemId: number,
+		item: Pick<ShoppingCartItem, 'quantity'>
+	): Promise<ApiResponse<void>> {
+		return this.request<void>(`/api/cart/items/${itemId}`, {
+			method: 'PUT',
+			body: JSON.stringify(item)
+		});
+	}
+
+	async removeCartItem(itemId: number): Promise<ApiResponse<void>> {
+		return this.request<void>(`/api/cart/items/${itemId}`, {
+			method: 'DELETE'
+		});
+	}
+
+	async clearMyCart(): Promise<ApiResponse<void>> {
+		return this.request<void>('/api/cart/clear', {
+			method: 'DELETE'
+		});
+	}
+
+	async clearCart(userId: number): Promise<ApiResponse<void>> {
+		return this.request<void>(`/api/cart/${userId}/clear`, {
+			method: 'DELETE'
+		});
+	}
+
+	// Legacy Chick endpoints (deprecated - use Store Items instead)
+	/** @deprecated Use getStoreItems() instead */
 	async getChicks(): Promise<ApiResponse<Chick[]>> {
 		return this.request<Chick[]>('/api/chicks');
 	}
 
+	/** @deprecated Use getStoreItem() instead */
 	async getChick(id: number): Promise<ApiResponse<Chick>> {
 		return this.request<Chick>(`/api/chicks/${id}`);
 	}
 
+	/** @deprecated Use createStoreItem() instead */
 	async createChick(
 		chick: Omit<Chick, 'id' | 'createdAt' | 'updatedAt' | 'user'>
 	): Promise<ApiResponse<Chick>> {
@@ -154,6 +253,7 @@ class ApiClient {
 		});
 	}
 
+	/** @deprecated Use updateStoreItem() instead */
 	async updateChick(
 		id: number,
 		chick: Partial<Omit<Chick, 'id' | 'createdAt' | 'user'>>
@@ -164,12 +264,14 @@ class ApiClient {
 		});
 	}
 
+	/** @deprecated Use deleteStoreItem() instead */
 	async deleteChick(id: number): Promise<ApiResponse<void>> {
 		return this.request<void>(`/api/chicks/${id}`, {
 			method: 'DELETE'
 		});
 	}
 
+	/** @deprecated Endpoint no longer exists */
 	async getChicksByUser(userId: number): Promise<ApiResponse<Chick[]>> {
 		return this.request<Chick[]>(`/api/users/${userId}/chicks`);
 	}
@@ -191,6 +293,7 @@ export const api = {
 	// Auth
 	setToken: (token: string) => apiClient.setToken(token),
 	clearToken: () => apiClient.clearToken(),
+	whoAmI: () => apiClient.whoAmI(),
 
 	// Users
 	users: {
@@ -202,15 +305,45 @@ export const api = {
 		delete: (id: number) => apiClient.deleteUser(id)
 	},
 
-	// Chicks
+	// Store Items
+	items: {
+		list: () => apiClient.getStoreItems(),
+		get: (id: number) => apiClient.getStoreItem(id),
+		create: (item: Omit<StoreItem, 'id' | 'createdAt' | 'updatedAt'>) =>
+			apiClient.createStoreItem(item),
+		update: (id: number, item: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) =>
+			apiClient.updateStoreItem(id, item),
+		delete: (id: number) => apiClient.deleteStoreItem(id)
+	},
+
+	// Shopping Cart
+	cart: {
+		get: () => apiClient.getMyCart(),
+		getByUser: (userId: number) => apiClient.getCart(userId),
+		addItem: (item: Pick<ShoppingCartItem, 'storeItemId' | 'quantity'>) =>
+			apiClient.addItemToCart(item),
+		updateItem: (itemId: number, item: Pick<ShoppingCartItem, 'quantity'>) =>
+			apiClient.updateCartItem(itemId, item),
+		removeItem: (itemId: number) => apiClient.removeCartItem(itemId),
+		clear: () => apiClient.clearMyCart(),
+		clearByUser: (userId: number) => apiClient.clearCart(userId)
+	},
+
+	// Legacy Chicks (deprecated)
 	chicks: {
+		/** @deprecated Use api.items.list() instead */
 		list: () => apiClient.getChicks(),
+		/** @deprecated Use api.items.get() instead */
 		get: (id: number) => apiClient.getChick(id),
+		/** @deprecated Use api.items.create() instead */
 		create: (chick: Omit<Chick, 'id' | 'createdAt' | 'updatedAt' | 'user'>) =>
 			apiClient.createChick(chick),
+		/** @deprecated Use api.items.update() instead */
 		update: (id: number, chick: Partial<Omit<Chick, 'id' | 'createdAt' | 'user'>>) =>
 			apiClient.updateChick(id, chick),
+		/** @deprecated Use api.items.delete() instead */
 		delete: (id: number) => apiClient.deleteChick(id),
+		/** @deprecated Endpoint no longer exists */
 		byUser: (userId: number) => apiClient.getChicksByUser(userId)
 	}
 };

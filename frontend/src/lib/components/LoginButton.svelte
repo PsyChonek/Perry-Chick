@@ -5,7 +5,6 @@ Simple component that shows login/logout button based on authentication state
 -->
 
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import {
 		keycloakService,
 		isAuthenticated,
@@ -13,10 +12,6 @@ Simple component that shows login/logout button based on authentication state
 		userInfo,
 		authError
 	} from '$lib/auth/keycloak';
-
-	onMount(async () => {
-		await keycloakService.init();
-	});
 
 	async function handleLogin() {
 		try {

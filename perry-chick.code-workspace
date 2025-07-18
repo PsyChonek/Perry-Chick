@@ -21,8 +21,8 @@
 			"path": "k8s"
 		},
 		{
-			"name": "strapi",
-			"path": "strapi"
+			"name": "Strapi",
+			"path": "Strapi"
 		},
 		{
 			"name": "Monitoring",
