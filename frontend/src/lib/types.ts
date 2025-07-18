@@ -1,25 +1,27 @@
-// TypeScript types matching the C# backend models
+// Import auto-generated API models
+import type { User as ApiUser, StoreItem, ShoppingCartItem } from './api/models';
 
-export interface User {
-	id: number;
-	username: string;
-	email: string;
-	createdAt: string;
-	updatedAt?: string;
-	isActive: boolean;
+// Re-export API models for convenience
+export type { StoreItem, ShoppingCartItem };
+export type User = ApiUser;
+
+// Frontend-specific types that don't exist in the backend
+export interface UserInfo {
+	userId?: number;
+	email?: string;
+	username?: string;
+	isAuthenticated: boolean;
+	roles: string[];
 }
 
-export interface StoreItem {
-	id: number;
-	name: string;
-	description: string;
-	price: number;
-	stock: number;
-	createdAt: string;
-	updatedAt?: string;
-	isActive: boolean;
+export interface AuthState {
+	isAuthenticated: boolean;
+	isLoading: boolean;
+	user: UserInfo | null;
+	error: string | null;
 }
 
+// ShoppingCart interface until it's properly exported from API
 export interface ShoppingCart {
 	id: number;
 	userId: number;
@@ -29,44 +31,12 @@ export interface ShoppingCart {
 	items: ShoppingCartItem[];
 }
 
-export interface ShoppingCartItem {
-	id: number;
-	shoppingCartId: number;
-	storeItemId: number;
-	quantity: number;
-	createdAt: string;
-	updatedAt?: string;
-	isActive: boolean;
-	storeItem: StoreItem;
-}
-
-export interface UserInfo {
-	userId?: number;
-	email?: string;
-	username?: string;
-	isAuthenticated: boolean;
-	roles: string[];
-}
-
-// Legacy interface for backward compatibility
-export interface Chick {
-	id: number;
-	name: string;
-	breed: string;
-	hatchDate: string;
-	color: string;
-	weight: number;
-	userId: number;
-	user?: User;
-	createdAt: string;
-	updatedAt?: string;
-	isActive: boolean;
-}
-
 export interface ApiResponse<T> {
 	data?: T;
+	success: boolean;
+	message?: string;
 	error?: string;
-	status: number;
+	status?: number;
 }
 
 export interface HealthCheck {

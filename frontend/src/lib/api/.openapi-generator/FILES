@@ -6,6 +6,7 @@ apis/StoreItemsApi.ts
 apis/UsersApi.ts
 apis/index.ts
 index.ts
+models/ShoppingCart.ts
 models/ShoppingCartItem.ts
 models/StoreItem.ts
 models/StringDateTimeStringfAnonymousType1.ts

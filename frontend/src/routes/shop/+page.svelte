@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib';
-	import type { StoreItem, ShoppingCart, ShoppingCartItem, UserInfo } from '$lib/types';
+	import { storeItemsApi, shoppingCartApi, authenticationApi } from '$lib/apiClient';
+	import type { StoreItem, ShoppingCart, ShoppingCartItem } from '$lib/api';
+	import type { UserInfo } from '$lib/types';
 	import PageLayout from '$lib/components/PageLayout.svelte';
 
 	let storeItems: StoreItem[] = [];

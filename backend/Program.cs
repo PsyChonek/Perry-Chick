@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 using Serilog;
 using PerryChick.Api.Data;
@@ -37,6 +38,33 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
 	c.SwaggerDoc("v1", new() { Title = "Perry Chick API", Version = "v1" });
+
+	// Add JWT Bearer authentication to Swagger
+	c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+	{
+		Name = "Authorization",
+		Type = SecuritySchemeType.Http,
+		Scheme = "Bearer",
+		BearerFormat = "JWT",
+		In = ParameterLocation.Header,
+		Description = "Enter 'Bearer' [space] and then your JWT token. Example: 'Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'"
+	});
+
+	// Make JWT Bearer authentication required for all endpoints by default
+	c.AddSecurityRequirement(new OpenApiSecurityRequirement
+	{
+		{
+			new OpenApiSecurityScheme
+			{
+				Reference = new OpenApiReference
+				{
+					Type = ReferenceType.SecurityScheme,
+					Id = "Bearer"
+				}
+			},
+			Array.Empty<string>()
+		}
+	});
 });
 
 // Add database context
@@ -84,18 +112,45 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>
 	{
-		options.Authority = Environment.GetEnvironmentVariable("KEYCLOAK_URL");
-		options.Audience = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID");
+		var keycloakUrl = Environment.GetEnvironmentVariable("KEYCLOAK_URL") ?? "http://localhost:8080";
+		var keycloakRealm = Environment.GetEnvironmentVariable("KEYCLOAK_REALM") ?? "perrychick";
+
+		options.Authority = $"{keycloakUrl}/realms/{keycloakRealm}";
+		options.Audience = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID") ?? "perrychick-frontend";
 		options.RequireHttpsMetadata = false; // Only for development
 
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
 			ValidateIssuer = true,
-			ValidateAudience = true,
+			ValidIssuer = $"{keycloakUrl}/realms/{keycloakRealm}",
+			ValidateAudience = false, // Disable audience validation for now to simplify
 			ValidateLifetime = true,
 			ValidateIssuerSigningKey = true,
-			ClockSkew = TimeSpan.Zero
+			ClockSkew = TimeSpan.FromMinutes(5) // Allow 5 minutes clock skew
 		};
+
+		// Add logging for debugging
+		options.Events = new JwtBearerEvents
+		{
+			OnTokenValidated = context =>
+			{
+				Log.Information("Token validated successfully for user: {User}",
+					context.Principal?.Identity?.Name ?? "Unknown");
+				return Task.CompletedTask;
+			},
+			OnAuthenticationFailed = context =>
+			{
+				Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+				return Task.CompletedTask;
+			},
+			OnChallenge = context =>
+			{
+				Log.Information("JWT Challenge triggered: {Error}", context.Error ?? "Unknown");
+				return Task.CompletedTask;
+			}
+		};
+
+		Log.Information("JWT Authentication configured with issuer: {Issuer}", options.Authority);
 	});
 
 builder.Services.AddAuthorization();
@@ -126,7 +181,13 @@ try
 	using (var scope = app.Services.CreateScope())
 	{
 		var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+		// Drop and recreate database in development to handle schema changes
+		if (app.Environment.IsDevelopment())
+		{
+			context.Database.EnsureDeleted();
+		}
 		context.Database.EnsureCreated();
+		Log.Information("Database schema updated successfully");
 	}
 }
 catch (Exception ex)
@@ -143,7 +204,8 @@ app.MapGet("/", () => new
 	Timestamp = DateTime.UtcNow
 })
 .WithName("GetRoot")
-.WithTags("Health");
+.WithTags("Health")
+.AllowAnonymous();
 
 app.MapGet("/health", () => new
 {
@@ -152,7 +214,8 @@ app.MapGet("/health", () => new
 	Version = "1.0.0"
 })
 .WithName("HealthCheck")
-.WithTags("Health");
+.WithTags("Health")
+.AllowAnonymous();
 
 // Configuration endpoint (development only)
 app.MapGet("/config", () => new
@@ -163,7 +226,8 @@ app.MapGet("/config", () => new
 	KeycloakClientId = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID") ?? "❌ Not found"
 })
 .WithName("GetConfig")
-.WithTags("Development");
+.WithTags("Development")
+.AllowAnonymous();
 
 // Authentication info endpoint
 app.MapGet("/api/auth/whoami", (IUserContext userContext) =>
@@ -210,7 +274,8 @@ app.MapPost("/api/users", async (User user, AppDbContext db) =>
 	return Results.Created($"/api/users/{user.Id}", user);
 })
 .WithName("CreateUser")
-.WithTags("Users");
+.WithTags("Users")
+.AllowAnonymous(); // Allow user registration without authentication
 
 app.MapPut("/api/users/{id}", async (int id, User inputUser, AppDbContext db) =>
 {
@@ -244,7 +309,7 @@ app.MapDelete("/api/users/{id}", async (int id, AppDbContext db) =>
 // Store Item endpoints
 app.MapGet("/api/items", async (AppDbContext db) =>
 {
-	return await db.Chicks.ToListAsync();
+	return await db.Items.ToListAsync();
 })
 .WithName("GetStoreItems")
 .WithTags("Store Items")
@@ -252,7 +317,7 @@ app.MapGet("/api/items", async (AppDbContext db) =>
 
 app.MapGet("/api/items/{id}", async (int id, AppDbContext db) =>
 {
-	var item = await db.Chicks.FirstOrDefaultAsync(i => i.Id == id);
+	var item = await db.Items.FirstOrDefaultAsync(i => i.Id == id);
 	return item is not null ? Results.Ok(item) : Results.NotFound();
 })
 .WithName("GetStoreItem")
@@ -262,7 +327,7 @@ app.MapGet("/api/items/{id}", async (int id, AppDbContext db) =>
 app.MapPost("/api/items", async (StoreItem item, AppDbContext db) =>
 {
 	item.CreatedAt = DateTime.UtcNow;
-	db.Chicks.Add(item);
+	db.Items.Add(item);
 	await db.SaveChangesAsync();
 	return Results.Created($"/api/items/{item.Id}", item);
 })
@@ -272,7 +337,7 @@ app.MapPost("/api/items", async (StoreItem item, AppDbContext db) =>
 
 app.MapPut("/api/items/{id}", async (int id, StoreItem inputItem, AppDbContext db) =>
 {
-	var item = await db.Chicks.FindAsync(id);
+	var item = await db.Items.FindAsync(id);
 	if (item is null) return Results.NotFound();
 
 	item.Name = inputItem.Name;
@@ -290,10 +355,10 @@ app.MapPut("/api/items/{id}", async (int id, StoreItem inputItem, AppDbContext d
 
 app.MapDelete("/api/items/{id}", async (int id, AppDbContext db) =>
 {
-	var item = await db.Chicks.FindAsync(id);
+	var item = await db.Items.FindAsync(id);
 	if (item is null) return Results.NotFound();
 
-	db.Chicks.Remove(item);
+	db.Items.Remove(item);
 	await db.SaveChangesAsync();
 	return Results.NoContent();
 })

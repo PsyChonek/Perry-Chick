@@ -1,114 +1,117 @@
 <!--
-Protected Chicks Management Page
+Protected Store Management Page
 
 This page demonstrates authentication-protected content using the AuthGuard component.
-Users must be logged in to view and manage chicks.
+Users must be logged in to view and manage store items.
 -->
 
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import AuthGuard from '$lib/auth/AuthGuard.svelte';
-	import { chicksApi, type Chick } from '$lib/apiClient';
+	import { storeItemsApi } from '$lib/apiClient';
+	import type { StoreItem } from '$lib/api';
 	import { isAuthenticated, userInfo } from '$lib/auth/keycloak';
 
-	let chicks: Chick[] = [];
+	let storeItems: StoreItem[] = [];
 	let loading = false;
 	let error: string | null = null;
 	let showForm = false;
-	let newChick: Partial<Chick> = {
+	let newItem: Partial<StoreItem> = {
 		name: '',
-		breed: '',
-		color: '',
-		weight: 0
+		description: '',
+		price: 0,
+		stock: 0
 	};
 
-	// Load chicks when authenticated
+	// Load store items when authenticated
 	$: if ($isAuthenticated) {
-		loadChicks();
+		loadStoreItems();
 	}
 
-	async function loadChicks() {
+	async function loadStoreItems() {
 		if (!$isAuthenticated) return;
 
 		loading = true;
 		error = null;
 
 		try {
-			chicks = await chicksApi.getAllChicks();
+			const response = await storeItemsApi.getStoreItems();
+			storeItems = response;
 		} catch (err: any) {
-			error = `Failed to load chicks: ${err.message || err}`;
-			console.error('Error loading chicks:', err);
+			error = `Failed to load items: ${err.message || err}`;
+			console.error('Error loading store items:', err);
 		} finally {
 			loading = false;
 		}
 	}
 
-	async function createChick() {
-		if (!newChick.name || !newChick.breed) {
-			error = 'Name and breed are required';
+	async function createStoreItem() {
+		if (!newItem.name || !newItem.description) {
+			error = 'Name and description are required';
 			return;
 		}
 
 		try {
-			const chickToCreate: Chick = {
+			const itemToCreate: StoreItem = {
 				id: 0,
-				name: newChick.name,
-				breed: newChick.breed,
-				hatchDate: new Date().toISOString(),
-				color: newChick.color || '',
-				weight: newChick.weight || 0,
-				userId: 0, // Will be set by backend
-				user: null as any,
-				createdAt: new Date().toISOString(),
+				name: newItem.name,
+				description: newItem.description,
+				price: newItem.price || 0,
+				stock: newItem.stock || 0,
+				createdAt: new Date(),
 				updatedAt: null,
 				isActive: true
 			};
 
-			await chicksApi.createChick({ chick: chickToCreate });
+			await storeItemsApi.createStoreItem({ storeItem: itemToCreate });
 
 			// Reset form
-			newChick = { name: '', breed: '', color: '', weight: 0 };
+			newItem = { name: '', description: '', price: 0, stock: 0 };
 			showForm = false;
 
-			// Reload chicks
-			await loadChicks();
+			// Reload items
+			await loadStoreItems();
 		} catch (err: any) {
-			error = `Failed to create chick: ${err.message || err}`;
-			console.error('Error creating chick:', err);
+			error = `Failed to create item: ${err.message || err}`;
+			console.error('Error creating store item:', err);
 		}
 	}
 
-	async function deleteChick(id: number, name: string) {
+	async function deleteStoreItem(id: number | undefined, name: string | undefined) {
+		if (!id || !name) return;
+
 		if (!confirm(`Are you sure you want to delete ${name}?`)) {
 			return;
 		}
 
 		try {
-			await chicksApi.deleteChick({ id });
-			chicks = chicks.filter((c) => c.id !== id);
+			await storeItemsApi.deleteStoreItem({ id });
+			storeItems = storeItems.filter((item) => item.id !== id);
 		} catch (err: any) {
-			error = `Failed to delete chick: ${err.message || err}`;
-			console.error('Error deleting chick:', err);
+			error = `Failed to delete item: ${err.message || err}`;
+			console.error('Error deleting store item:', err);
 		}
 	}
 
-	function formatDate(dateString: string): string {
-		return new Date(dateString).toLocaleDateString();
+	function formatDate(date: Date | string): string {
+		const dateObj = typeof date === 'string' ? new Date(date) : date;
+		return dateObj.toLocaleDateString();
 	}
 
-	function formatWeight(weight: number): string {
-		return `${weight.toFixed(1)} lbs`;
+	function formatPrice(price: number | null | undefined): string {
+		if (price == null) return '0.00';
+		return price.toFixed(2);
 	}
 </script>
 
 <svelte:head>
-	<title>Chick Management - Perry Chick</title>
+	<title>Store Management - Perry Chick</title>
 </svelte:head>
 
 <AuthGuard requireRoles={['farmer', 'admin']}>
-	<div class="chick-management">
+	<div class="store-management">
 		<div class="header">
-			<h1>🐥 Chick Management</h1>
+			<h1>� Store Management</h1>
 			{#if $userInfo}
 				<p class="welcome">Welcome back, {$userInfo.firstName || $userInfo.username}!</p>
 			{/if}
@@ -123,66 +126,67 @@ Users must be logged in to view and manage chicks.
 
 		<div class="actions">
 			<button on:click={() => (showForm = !showForm)} class="btn-primary" disabled={loading}>
-				{showForm ? '❌ Cancel' : '➕ Add New Chick'}
+				{showForm ? '❌ Cancel' : '➕ Add New Item'}
 			</button>
 
-			<button on:click={loadChicks} class="btn-secondary" disabled={loading}>
+			<button on:click={loadStoreItems} class="btn-secondary" disabled={loading}>
 				{loading ? '🔄 Loading...' : '🔄 Refresh'}
 			</button>
 		</div>
 
 		{#if showForm}
 			<div class="form-container">
-				<h2>Add New Chick</h2>
-				<form on:submit|preventDefault={createChick}>
+				<h2>Add New Store Item</h2>
+				<form on:submit|preventDefault={createStoreItem}>
 					<div class="form-grid">
 						<div class="form-group">
 							<label for="name">Name *</label>
 							<input
 								id="name"
 								type="text"
-								bind:value={newChick.name}
-								placeholder="Enter chick name"
+								bind:value={newItem.name}
+								placeholder="Enter item name"
 								required
 							/>
 						</div>
 
 						<div class="form-group">
-							<label for="breed">Breed *</label>
+							<label for="description">Description *</label>
 							<input
-								id="breed"
+								id="description"
 								type="text"
-								bind:value={newChick.breed}
-								placeholder="e.g., Rhode Island Red"
+								bind:value={newItem.description}
+								placeholder="Enter item description"
 								required
 							/>
 						</div>
 
 						<div class="form-group">
-							<label for="color">Color</label>
+							<label for="price">Price ($)</label>
 							<input
-								id="color"
-								type="text"
-								bind:value={newChick.color}
-								placeholder="e.g., Brown"
-							/>
-						</div>
-
-						<div class="form-group">
-							<label for="weight">Weight (lbs)</label>
-							<input
-								id="weight"
+								id="price"
 								type="number"
-								step="0.1"
+								step="0.01"
 								min="0"
-								bind:value={newChick.weight}
-								placeholder="0.0"
+								bind:value={newItem.price}
+								placeholder="0.00"
+							/>
+						</div>
+
+						<div class="form-group">
+							<label for="stock">Stock Quantity</label>
+							<input
+								id="stock"
+								type="number"
+								min="0"
+								bind:value={newItem.stock}
+								placeholder="0"
 							/>
 						</div>
 					</div>
 
 					<div class="form-actions">
-						<button type="submit" class="btn-success"> ✅ Create Chick </button>
+						<button type="submit" class="btn-success"> ✅ Create Item </button>
 						<button
 							type="button"
 							on:click={() => (showForm = false)}
@@ -195,67 +199,68 @@ Users must be logged in to view and manage chicks.
 			</div>
 		{/if}
 
-		<div class="chicks-section">
+		<div class="items-section">
 			{#if loading}
 				<div class="loading">
 					<div class="spinner"></div>
-					<p>Loading your chicks...</p>
+					<p>Loading your store items...</p>
 				</div>
-			{:else if chicks.length === 0}
+			{:else if storeItems.length === 0}
 				<div class="empty-state">
-					<h2>🐣 No chicks yet!</h2>
-					<p>Start your flock by adding your first chick.</p>
+					<h2>🏪 No items yet!</h2>
+					<p>Start your store by adding your first item.</p>
 					<button on:click={() => (showForm = true)} class="btn-primary">
-						➕ Add First Chick
+						➕ Add First Item
 					</button>
 				</div>
 			{:else}
-				<div class="chicks-grid">
-					{#each chicks as chick (chick.id)}
-						<div class="chick-card">
-							<div class="chick-header">
-								<h3>{chick.name}</h3>
+				<div class="items-grid">
+					{#each storeItems as item (item.id)}
+						<div class="item-card">
+							<div class="item-header">
+								<h3>{item.name}</h3>
 								<button
-									on:click={() => deleteChick(chick.id, chick.name)}
+									on:click={() => item.id && deleteStoreItem(item.id, item.name)}
 									class="delete-btn"
-									title="Delete chick"
+									title="Delete item"
 								>
 									🗑️
 								</button>
 							</div>
 
-							<div class="chick-details">
+							<div class="item-details">
 								<div class="detail-row">
-									<span class="label">🐔 Breed:</span>
-									<span class="value">{chick.breed}</span>
-								</div>
-
-								{#if chick.color}
-									<div class="detail-row">
-										<span class="label">🎨 Color:</span>
-										<span class="value">{chick.color}</span>
-									</div>
-								{/if}
-
-								<div class="detail-row">
-									<span class="label">⚖️ Weight:</span>
-									<span class="value">{formatWeight(chick.weight)}</span>
+									<span class="label">� Description:</span>
+									<span class="value">{item.description}</span>
 								</div>
 
 								<div class="detail-row">
-									<span class="label">🗓️ Hatched:</span>
-									<span class="value">{formatDate(chick.hatchDate)}</span>
+									<span class="label">💲 Price:</span>
+									<span class="value">${formatPrice(item.price)}</span>
+								</div>
+
+								<div class="detail-row">
+									<span class="label">� Stock:</span>
+									<span class="value">{item.stock ?? 0}</span>
 								</div>
 
 								<div class="detail-row">
 									<span class="label">📅 Added:</span>
-									<span class="value">{formatDate(chick.createdAt)}</span>
+									<span class="value"
+										>{item.createdAt
+											? formatDate(item.createdAt)
+											: 'Unknown'}</span
+									>
 								</div>
 							</div>
 
-							<div class="chick-status">
-								<span class="status-badge {chick.isActive ? 'active' : 'inactive'}">
-									{chick.isActive ? '✅ Active' : '❌ Inactive'}
+							<div class="item-status">
+								<span
+									class="status-badge {(item.stock ?? 0) > 0
+										? 'active'
+										: 'inactive'}"
+								>
+									{(item.stock ?? 0) > 0 ? '✅ In Stock' : '❌ Out of Stock'}
 								</span>
 							</div>
 						</div>
@@ -267,7 +272,7 @@ Users must be logged in to view and manage chicks.
 </AuthGuard>
 
 <style>
-	.chick-management {
+	.store-management {
 		max-width: 1200px;
 		margin: 0 auto;
 		padding: 2rem;
@@ -468,13 +473,13 @@ Users must be logged in to view and manage chicks.
 		font-size: 1.1rem;
 	}
 
-	.chicks-grid {
+	.items-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 		gap: 1.5rem;
 	}
 
-	.chick-card {
+	.item-card {
 		background: white;
 		border-radius: 12px;
 		padding: 1.5rem;
@@ -484,12 +489,12 @@ Users must be logged in to view and manage chicks.
 			box-shadow 0.2s;
 	}
 
-	.chick-card:hover {
+	.item-card:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
 	}
 
-	.chick-header {
+	.item-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -498,7 +503,7 @@ Users must be logged in to view and manage chicks.
 		border-bottom: 2px solid #ecf0f1;
 	}
 
-	.chick-header h3 {
+	.item-header h3 {
 		margin: 0;
 		color: #2c3e50;
 		font-size: 1.3rem;
@@ -518,7 +523,7 @@ Users must be logged in to view and manage chicks.
 		background: #fee;
 	}
 
-	.chick-details {
+	.item-details {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
@@ -540,7 +545,7 @@ Users must be logged in to view and manage chicks.
 		color: #2c3e50;
 	}
 
-	.chick-status {
+	.item-status {
 		display: flex;
 		justify-content: center;
 	}

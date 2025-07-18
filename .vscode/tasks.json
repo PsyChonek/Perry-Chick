@@ -23,7 +23,7 @@
       },
       "group": "build",
       "isBackground": true
-    },
+    }, 
     {
       "label": "Debug Notifications",
       "type": "shell",

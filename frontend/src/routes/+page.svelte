@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api } from '$lib';
+	import { healthApi, developmentApi } from '$lib/apiClient';
 	import type { ApiConfig, ConfigStatus } from '$lib/types';
 	import PageLayout from '$lib/components/PageLayout.svelte';
 
@@ -10,23 +10,27 @@
 
 	onMount(async () => {
 		// Test health endpoint
-		const healthResponse = await api.health();
-		if (healthResponse.data) {
-			apiStatus = `Connected ✅ (v${healthResponse.data.version})`;
-		} else {
-			apiStatus = `Backend Unavailable ❌ (${healthResponse.error})`;
+		try {
+			const healthResponse = await healthApi.healthCheck();
+			apiStatus = `Connected ✅ (v${healthResponse.version})`;
+		} catch (error) {
+			apiStatus = `Backend Unavailable ❌ (${error})`;
 		}
 
 		// Get backend info
-		const rootResponse = await api.root();
-		if (rootResponse.data) {
-			backendInfo = rootResponse.data;
+		try {
+			const rootResponse = await developmentApi.getRoot();
+			backendInfo = rootResponse;
+		} catch (error) {
+			console.error('Failed to get root info:', error);
 		}
 
 		// Get config status (development only)
-		const configResponse = await api.config();
-		if (configResponse.data) {
-			configStatus = configResponse.data;
+		try {
+			const configResponse = await developmentApi.getConfig();
+			configStatus = configResponse;
+		} catch (error) {
+			console.error('Failed to get config:', error);
 		}
 	});
 </script>

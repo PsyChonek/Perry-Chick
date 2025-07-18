@@ -36,6 +36,11 @@ $Port = "8080"
 $Image = "quay.io/keycloak/keycloak:23.0"
 $RealmFile = "perrychick-realm.json"
 
+function Write-ColorOutput {
+	param([string]$Message, [string]$Color = $Reset)
+	Write-Host "$Color$Message$Reset"
+}
+
 # Load environment variables from .env.local if it exists
 $EnvFile = ".env.local"
 if (Test-Path $EnvFile) {
@@ -59,11 +64,6 @@ $Green = "`e[32m"
 $Yellow = "`e[33m"
 $Blue = "`e[34m"
 $Reset = "`e[0m"
-
-function Write-ColorOutput {
-	param([string]$Message, [string]$Color = $Reset)
-	Write-Host "$Color$Message$Reset"
-}
 
 function Test-DockerRunning {
 	try {
@@ -187,6 +187,7 @@ function Create-RealmConfig {
 		}
 		users                  = @(
 			@{
+				id            = "admin-keycloak-id"
 				username      = "admin"
 				enabled       = $true
 				firstName     = "Admin"
@@ -206,6 +207,7 @@ function Create-RealmConfig {
 				)
 			},
 			@{
+				id            = "farmer1-keycloak-id"
 				username      = "farmer1"
 				enabled       = $true
 				firstName     = "John"
@@ -340,11 +342,13 @@ function Show-TestUsers {
 	Write-ColorOutput "   🔑 Admin User:" $Reset
 	Write-ColorOutput "      Username: admin" $Reset
 	Write-ColorOutput "      Password: admin123" $Reset
+	Write-ColorOutput "      KeycloakId: admin-keycloak-id" $Reset
 	Write-ColorOutput "      Roles: admin, user" $Reset
 	Write-ColorOutput ""
 	Write-ColorOutput "   🌾 Farmer User:" $Reset
 	Write-ColorOutput "      Username: farmer1" $Reset
 	Write-ColorOutput "      Password: farmer123" $Reset
+	Write-ColorOutput "      KeycloakId: farmer1-keycloak-id" $Reset
 	Write-ColorOutput "      Roles: farmer, user" $Reset
 	Write-ColorOutput ""
 	Write-ColorOutput "ℹ️  To stop: docker stop $ContainerName" $Blue

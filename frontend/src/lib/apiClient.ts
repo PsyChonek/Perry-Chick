@@ -6,10 +6,12 @@
  */
 
 import { Configuration } from './api/runtime';
-import { ChicksApi } from './api/apis/ChicksApi';
+import { StoreItemsApi } from './api/apis/StoreItemsApi';
 import { UsersApi } from './api/apis/UsersApi';
 import { HealthApi } from './api/apis/HealthApi';
 import { DevelopmentApi } from './api/apis/DevelopmentApi';
+import { AuthenticationApi } from './api/apis/AuthenticationApi';
+import { ShoppingCartApi } from './api/apis/ShoppingCartApi';
 import { keycloakService } from './auth/keycloak';
 
 // API Configuration with Keycloak authentication
@@ -23,10 +25,12 @@ const apiConfig = new Configuration({
 });
 
 // Pre-configured API instances
-export const chicksApi = new ChicksApi(apiConfig);
+export const storeItemsApi = new StoreItemsApi(apiConfig);
 export const usersApi = new UsersApi(apiConfig);
 export const healthApi = new HealthApi(apiConfig);
 export const developmentApi = new DevelopmentApi(apiConfig);
+export const authenticationApi = new AuthenticationApi(apiConfig);
+export const shoppingCartApi = new ShoppingCartApi(apiConfig);
 
 // Export the configuration for custom usage
 export { apiConfig };

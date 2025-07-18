@@ -13,6 +13,14 @@
  */
 
 import { mapValues } from '../runtime';
+import type { ShoppingCart } from './ShoppingCart';
+import {
+    ShoppingCartFromJSON,
+    ShoppingCartFromJSONTyped,
+    ShoppingCartToJSON,
+    ShoppingCartToJSONTyped,
+} from './ShoppingCart';
+
 /**
  * 
  * @export
@@ -25,6 +33,12 @@ export interface User {
      * @memberof User
      */
     id?: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    keycloakId: string;
     /**
      * 
      * @type {string}
@@ -51,16 +65,35 @@ export interface User {
     updatedAt?: Date | null;
     /**
      * 
+     * @type {Date}
+     * @memberof User
+     */
+    lastLoginAt?: Date | null;
+    /**
+     * 
      * @type {boolean}
      * @memberof User
      */
     isActive?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof User
+     */
+    preferences?: string | null;
+    /**
+     * 
+     * @type {Array<ShoppingCart>}
+     * @memberof User
+     */
+    shoppingCarts?: Array<ShoppingCart> | null;
 }
 
 /**
  * Check if a given object implements the User interface.
  */
 export function instanceOfUser(value: object): value is User {
+    if (!('keycloakId' in value) || value['keycloakId'] === undefined) return false;
     if (!('username' in value) || value['username'] === undefined) return false;
     if (!('email' in value) || value['email'] === undefined) return false;
     return true;
@@ -77,11 +110,15 @@ export function UserFromJSONTyped(json: any, ignoreDiscriminator: boolean): User
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
+        'keycloakId': json['keycloakId'],
         'username': json['username'],
         'email': json['email'],
         'createdAt': json['createdAt'] == null ? undefined : (new Date(json['createdAt'])),
         'updatedAt': json['updatedAt'] == null ? undefined : (new Date(json['updatedAt'])),
+        'lastLoginAt': json['lastLoginAt'] == null ? undefined : (new Date(json['lastLoginAt'])),
         'isActive': json['isActive'] == null ? undefined : json['isActive'],
+        'preferences': json['preferences'] == null ? undefined : json['preferences'],
+        'shoppingCarts': json['shoppingCarts'] == null ? undefined : ((json['shoppingCarts'] as Array<any>).map(ShoppingCartFromJSON)),
     };
 }
 
@@ -97,11 +134,15 @@ export function UserToJSONTyped(value?: User | null, ignoreDiscriminator: boolea
     return {
         
         'id': value['id'],
+        'keycloakId': value['keycloakId'],
         'username': value['username'],
         'email': value['email'],
         'createdAt': value['createdAt'] == null ? undefined : ((value['createdAt']).toISOString()),
         'updatedAt': value['updatedAt'] === null ? null : ((value['updatedAt'] as any)?.toISOString()),
+        'lastLoginAt': value['lastLoginAt'] === null ? null : ((value['lastLoginAt'] as any)?.toISOString()),
         'isActive': value['isActive'],
+        'preferences': value['preferences'],
+        'shoppingCarts': value['shoppingCarts'] == null ? undefined : ((value['shoppingCarts'] as Array<any>).map(ShoppingCartToJSON)),
     };
 }
 

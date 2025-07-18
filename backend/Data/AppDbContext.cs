@@ -10,7 +10,7 @@ public class AppDbContext : DbContext
 	}
 
 	public DbSet<User> Users { get; set; }
-	public DbSet<StoreItem> Chicks { get; set; }
+	public DbSet<StoreItem> Items { get; set; }
 	public DbSet<ShoppingCart> ShoppingCarts { get; set; }
 	public DbSet<ShoppingCartItem> ShoppingCartItems { get; set; }
 
@@ -71,8 +71,18 @@ public class AppDbContext : DbContext
 			new User
 			{
 				Id = 1,
-				Username = "Demo User",
-				Email = "demo@perrystore.com",
+				KeycloakId = "admin-keycloak-id",
+				Username = "admin",
+				Email = "admin@perrychick.com",
+				CreatedAt = DateTime.UtcNow,
+				IsActive = true
+			},
+			new User
+			{
+				Id = 2,
+				KeycloakId = "farmer1-keycloak-id",
+				Username = "farmer1",
+				Email = "farmer@perrychick.com",
 				CreatedAt = DateTime.UtcNow,
 				IsActive = true
 			}
