@@ -9,20 +9,33 @@ The Perry Chick project uses two types of configuration:
 - **ConfigMap** (`k8s/configmap.yaml`) - Non-sensitive configuration values
 - **Secrets** (`k8s/secrets-generated.yaml`) - Sensitive values like passwords and API keys
 
-Both are automatically generated from your local `.env.local` file using PowerShell scripts.
+Both are automatically generated from your `.env.kubernetes` file (for Kubernetes deployments) or `.env.local` file (for local development) using PowerShell scripts.
+
+## Environment Files
+
+### `.env.local`
+
+Contains environment variables optimized for local development with services running on localhost.
+
+### `.env.kubernetes`
+
+Contains environment variables optimized for Kubernetes deployment with internal service names and URLs.
 
 ## Scripts
 
 ### 1. `sync-configmap-from-env.ps1`
 
-Synchronizes the Kubernetes ConfigMap with non-sensitive values from `.env.local`.
+Synchronizes the Kubernetes ConfigMap with non-sensitive values from the specified environment file.
 
 ```powershell
-# Generate ConfigMap only
+# Generate ConfigMap only (uses .env.kubernetes by default)
 ./scripts/sync-configmap-from-env.ps1
 
 # Generate and apply to Kubernetes
 ./scripts/sync-configmap-from-env.ps1 -Apply
+
+# Use local environment file instead
+./scripts/sync-configmap-from-env.ps1 -EnvFile .env.local
 
 # Create backup before updating
 ./scripts/sync-configmap-from-env.ps1 -Backup
@@ -31,9 +44,9 @@ Synchronizes the Kubernetes ConfigMap with non-sensitive values from `.env.local
 **Excluded from ConfigMap (these go in secrets):**
 
 - `POSTGRES_PASSWORD`
-- `KEYCLOAK_ADMIN_PASSWORD`
-- `KEYCLOAK_CLIENT_SECRET`
-- `KEYCLOAK_DB_PASSWORD`
+- `KC_ADMIN_PASSWORD`
+- `KC_CLIENT_SECRET`
+- `KC_DB_PASSWORD`
 - `REDIS_PASSWORD`
 - `SENDGRID_API_KEY`
 - `GRAFANA_ADMIN_PASSWORD`
@@ -48,7 +61,7 @@ Synchronizes the Kubernetes ConfigMap with non-sensitive values from `.env.local
 Complete environment synchronization script that handles both ConfigMap and Secrets.
 
 ```powershell
-# Generate ConfigMap and Secrets (dry run)
+# Generate ConfigMap and Secrets (dry run) - uses .env.kubernetes by default
 ./scripts/update-env-config.ps1
 
 # Generate and apply to Kubernetes
@@ -56,6 +69,9 @@ Complete environment synchronization script that handles both ConfigMap and Secr
 
 # Generate, apply, and restart deployments
 ./scripts/update-env-config.ps1 -Apply -Restart
+
+# Use local environment file instead
+./scripts/update-env-config.ps1 -EnvFile .env.local -Apply
 
 # Create backups before updating
 ./scripts/update-env-config.ps1 -Apply -Restart -Backup
@@ -67,7 +83,7 @@ The following tasks are available in VS Code:
 
 | Task                                   | Description                              |
 | -------------------------------------- | ---------------------------------------- |
-| **Sync ConfigMap from .env**           | Generate ConfigMap from .env.local       |
+| **Sync ConfigMap from .env**           | Generate ConfigMap from .env.kubernetes  |
 | **Update Environment Config**          | Generate both ConfigMap and Secrets      |
 | **Update Environment Config & Deploy** | Generate, apply, and restart deployments |
 
@@ -75,13 +91,22 @@ Access via: `Ctrl+Shift+P` → `Tasks: Run Task`
 
 ## Workflow
 
-### 1. Update Configuration
+### 1. Update Configuration for Kubernetes
 
-1. Edit your `.env.local` file with new values
+1. Edit your `.env.kubernetes` file with new values
 2. Run the sync script:
 
    ```powershell
    ./scripts/update-env-config.ps1 -Apply -Restart
+   ```
+
+### 2. Update Configuration for Local Development
+
+1. Edit your `.env.local` file with new values
+2. Run the sync script with local file:
+
+   ```powershell
+   ./scripts/update-env-config.ps1 -EnvFile .env.local -Apply -Restart
    ```
 
 ### 2. Add New Environment Variables

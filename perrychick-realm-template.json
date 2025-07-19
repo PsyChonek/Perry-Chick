@@ -1,0 +1,121 @@
+{
+	"realm": "perrychick",
+	"displayName": "Perry Chick",
+	"enabled": true,
+	"registrationAllowed": true,
+	"loginWithEmailAllowed": true,
+	"duplicateEmailsAllowed": false,
+	"resetPasswordAllowed": true,
+	"editUsernameAllowed": false,
+	"bruteForceProtected": true,
+	"clients": [
+		{
+			"clientId": "perrychick-frontend",
+			"name": "Perry Chick Frontend",
+			"enabled": true,
+			"clientAuthenticatorType": "client-secret",
+			"secret": "your_client_secret_here",
+			"standardFlowEnabled": true,
+			"implicitFlowEnabled": false,
+			"directAccessGrantsEnabled": true,
+			"serviceAccountsEnabled": false,
+			"publicClient": true,
+			"frontchannelLogout": true,
+			"protocol": "openid-connect",
+			"attributes": {
+				"saml.assertion.signature": "false",
+				"saml.force.post.binding": "false",
+				"saml.multivalued.roles": "false",
+				"saml.encrypt": "false",
+				"saml.server.signature": "false",
+				"saml.server.signature.keyinfo.ext": "false",
+				"exclude.session.state.from.auth.response": "false",
+				"saml_force_name_id_format": "false",
+				"saml.client.signature": "false",
+				"tls.client.certificate.bound.access.tokens": "false",
+				"saml.authnstatement": "false",
+				"display.on.consent.screen": "false",
+				"saml.onetimeuse.condition": "false"
+			},
+			"redirectUris": [
+				"http://localhost:3000/*",
+				"http://localhost:5173/*"
+			],
+			"webOrigins": [
+				"http://localhost:3000",
+				"http://localhost:5173",
+				"+"
+			],
+			"defaultClientScopes": [
+				"web-origins",
+				"profile",
+				"roles",
+				"email"
+			],
+			"optionalClientScopes": [
+				"address",
+				"phone",
+				"offline_access",
+				"microprofile-jwt"
+			]
+		}
+	],
+	"roles": {
+		"realm": [
+			{
+				"name": "admin",
+				"description": "Administrator role"
+			},
+			{
+				"name": "user",
+				"description": "Regular user role"
+			},
+			{
+				"name": "farmer",
+				"description": "Farmer role with chick management permissions"
+			}
+		]
+	},
+	"users": [
+		{
+			"id": "admin-keycloak-id",
+			"username": "admin",
+			"enabled": true,
+			"firstName": "Admin",
+			"lastName": "User",
+			"email": "admin@perrychick.com",
+			"emailVerified": true,
+			"credentials": [
+				{
+					"type": "password",
+					"value": "admin123",
+					"temporary": false
+				}
+			],
+			"realmRoles": [
+				"admin",
+				"user"
+			]
+		},
+		{
+			"id": "farmer1-keycloak-id",
+			"username": "farmer1",
+			"enabled": true,
+			"firstName": "John",
+			"lastName": "Farmer",
+			"email": "farmer@perrychick.com",
+			"emailVerified": true,
+			"credentials": [
+				{
+					"type": "password",
+					"value": "farmer123",
+					"temporary": false
+				}
+			],
+			"realmRoles": [
+				"farmer",
+				"user"
+			]
+		}
+	]
+}

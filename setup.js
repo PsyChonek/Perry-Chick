@@ -94,7 +94,7 @@ if (missingTools.length > 0) {
 
 console.log("✅ All prerequisites found!");
 
-// Create environment file
+// Create environment files
 console.log("\n📝 Setting up environment configuration...");
 
 if (!fs.existsSync(".env.local")) {
@@ -107,6 +107,41 @@ if (!fs.existsSync(".env.local")) {
 	}
 } else {
 	console.log("✅ .env.local already exists");
+}
+
+if (!fs.existsSync(".env.kubernetes")) {
+	if (fs.existsSync(".env.example")) {
+		// Copy .env.example as base and modify for Kubernetes
+		let envContent = fs.readFileSync(".env.example", "utf8");
+
+		// Replace localhost URLs with Kubernetes service names
+		envContent = envContent
+			.replace(/Host=localhost:5432/g, "Host=postgres:5432")
+			.replace(/http:\/\/localhost:8080/g, "http://keycloak:8080")
+			.replace(/localhost:6379/g, "redis:6379")
+			.replace(/http:\/\/localhost:5006/g, "http://backend:8080")
+			.replace(/http:\/\/localhost:3000/g, "http://frontend:3000")
+			.replace(/http:\/\/localhost:5003/g, "http://notifications:8080")
+			.replace(/http:\/\/localhost:9090/g, "http://prometheus:9090")
+			.replace(/http:\/\/localhost:3001/g, "http://grafana:3000")
+			.replace(/http:\/\/localhost:16686/g, "http://jaeger-query:16686")
+			.replace(/http:\/\/localhost:4317/g, "http://jaeger-collector:4317")
+			.replace(
+				/ASPNETCORE_ENVIRONMENT=Development/g,
+				"ASPNETCORE_ENVIRONMENT=Production"
+			)
+			.replace(/NODE_ENV=development/g, "NODE_ENV=production")
+			.replace(
+				/KC_CONTAINER_NAME=perrychick-keycloak-local/g,
+				"KC_CONTAINER_NAME=perrychick-keycloak-k8s"
+			);
+
+		fs.writeFileSync(".env.kubernetes", envContent);
+		console.log("✅ Created .env.kubernetes for Kubernetes deployment");
+		console.log("   This file contains Kubernetes-optimized configuration");
+	}
+} else {
+	console.log("✅ .env.kubernetes already exists");
 }
 
 // Start Minikube if requested
@@ -177,7 +212,9 @@ console.log("   code perry-chick.code-workspace");
 
 console.log("\n2. Install recommended VS Code extensions when prompted");
 
-console.log("\n3. Edit .env.local with your configuration values");
+console.log("\n3. Edit environment files with your configuration values:");
+console.log("   - .env.local (for local development)");
+console.log("   - .env.kubernetes (for Kubernetes deployment)");
 
 console.log("\n4. Use VS Code tasks to build and run the application:");
 console.log(
@@ -194,7 +231,8 @@ console.log(
 if (!skipMinikube) {
 	console.log("\n🔗 Useful URLs (after deployment):");
 	console.log("   - Frontend: http://localhost:3000");
-	console.log("   - Backend API: http://localhost:5000");
+	console.log("   - Backend API: http://localhost:5006");
+	console.log("   - Keycloak: http://localhost:8080");
 	console.log("   - Grafana: http://localhost:3001");
 	console.log("   - Prometheus: http://localhost:9090");
 	console.log("   - Jaeger: http://localhost:16686");

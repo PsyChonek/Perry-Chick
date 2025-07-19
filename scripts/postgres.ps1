@@ -10,13 +10,13 @@
 .PARAMETER Force
     Force remove existing container before starting a new one
 .EXAMPLE
-    .\start-local-postgres.ps1
+    .\postgres.ps1
     Start PostgreSQL container
 .EXAMPLE
-    .\start-local-postgres.ps1 -Stop
+    .\postgres.ps1 -Stop
     Stop PostgreSQL container
 .EXAMPLE
-    .\start-local-postgres.ps1 -Force
+    .\postgres.ps1 -Force
     Force restart PostgreSQL container
 #>
 
@@ -153,7 +153,7 @@ function Start-PostgresContainer {
 			Write-ColorOutput "   Host=localhost;Database=$PostgresDB;Username=$PostgresUser;Password=$PostgresPassword" $Reset
 			Write-ColorOutput ""
 			Write-ColorOutput "ℹ️  To stop: docker stop $ContainerName" $Blue
-			Write-ColorOutput "ℹ️  Or use: .\start-local-postgres.ps1 -Stop" $Blue
+			Write-ColorOutput "ℹ️  Or use: .\postgres.ps1 -Stop" $Blue
 		}
 		else {
 			Write-ColorOutput "❌ PostgreSQL failed to start within 30 seconds" $Red

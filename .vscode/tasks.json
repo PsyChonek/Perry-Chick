@@ -11,7 +11,15 @@
       },
       "group": "build",
       "problemMatcher": ["$msCompile"],
-      "isBackground": true
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      }
     },
     {
       "label": "Debug Frontend",
@@ -23,7 +31,7 @@
       },
       "group": "build",
       "isBackground": true
-    }, 
+    },
     {
       "label": "Debug Notifications",
       "type": "shell",
@@ -34,13 +42,35 @@
       },
       "group": "build",
       "problemMatcher": ["$msCompile"],
-      "isBackground": true
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+      }
     },
     {
-      "label": "Reinitialize Minikube",
+      "label": "Start Minikube",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/reinitialize-minikube.ps1"],
+      "args": ["-File", "./scripts/minikube.ps1"],
+      "group": "build"
+    },
+    {
+      "label": "Stop Minikube",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/minikube.ps1", "-Stop"],
+      "group": "build"
+    },
+    {
+      "label": "Restart Minikube",
+      "type": "shell",
+      "command": "pwsh",
+      "args": ["-File", "./scripts/minikube.ps1", "-Restart"],
       "group": "build"
     },
     {
@@ -66,31 +96,6 @@
       "isBackground": true
     },
     {
-      "label": "Debug Strapi",
-      "type": "shell",
-      "command": "npm",
-      "args": ["run", "develop"],
-      "options": {
-        "cwd": "${workspaceFolder}/strapi"
-      },
-      "group": "build",
-      "isBackground": true
-    },
-    {
-      "label": "Setup Strapi",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-File", "./scripts/setup-strapi.ps1"],
-      "group": "build"
-    },
-    {
-      "label": "Generate Strapi Secrets",
-      "type": "shell",
-      "command": "pwsh",
-      "args": ["-File", "./scripts/generate-strapi-secrets.ps1"],
-      "group": "build"
-    },
-    {
       "label": "Check Pod Status",
       "type": "shell",
       "command": "kubectl",
@@ -98,25 +103,25 @@
       "group": "test"
     },
     {
-      "label": "Start Local PostgreSQL",
+      "label": "Start PostgreSQL",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-postgres.ps1"],
+      "args": ["-File", "./scripts/postgres.ps1"],
       "group": "test",
       "isBackground": false
     },
     {
-      "label": "Stop Local PostgreSQL",
+      "label": "Stop PostgreSQL",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-postgres.ps1", "-Stop"],
+      "args": ["-File", "./scripts/postgres.ps1", "-Stop"],
       "group": "test"
     },
     {
-      "label": "Restart Local PostgreSQL",
+      "label": "Restart PostgreSQL",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-postgres.ps1", "-Force"],
+      "args": ["-File", "./scripts/postgres.ps1", "-Force"],
       "group": "test"
     },
     {
@@ -132,26 +137,53 @@
       "dependsOn": ["Debug Backend"]
     },
     {
-      "label": "Start Local Keycloak",
+      "label": "Start Keycloak",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-keycloak.ps1"],
+      "args": ["-File", "./scripts/keycloak.ps1"],
       "group": "test",
       "isBackground": false
     },
     {
-      "label": "Stop Local Keycloak",
+      "label": "Stop Keycloak",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-keycloak.ps1", "-Stop"],
+      "args": ["-File", "./scripts/keycloak.ps1", "-Stop"],
       "group": "test"
     },
     {
-      "label": "Restart Local Keycloak",
+      "label": "Restart Keycloak",
       "type": "shell",
       "command": "pwsh",
-      "args": ["-File", "./scripts/start-local-keycloak.ps1", "-Force"],
+      "args": ["-File", "./scripts/keycloak.ps1", "-Force"],
       "group": "test"
+    },
+    {
+      "label": "Build Backend",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "--configuration", "Debug"],
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "group": "build",
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "Build Notifications",
+      "type": "shell",
+      "command": "dotnet",
+      "args": ["build", "--configuration", "Debug"],
+      "options": {
+        "cwd": "${workspaceFolder}/notifications"
+      },
+      "group": "build",
+      "problemMatcher": ["$msCompile"]
+    },
+    {
+      "label": "Setup Development Environment",
+      "dependsOrder": "parallel",
+      "dependsOn": ["Build Backend", "Build Notifications"]
     }
   ]
 }

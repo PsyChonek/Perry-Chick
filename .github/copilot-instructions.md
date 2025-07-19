@@ -19,7 +19,7 @@ Perry Chick is a **microservices e-commerce application** running on Kubernetes 
 
 ```bash
 # Complete Minikube setup (one command for everything)
-./scripts/reinitialize-minikube.ps1
+./scripts/minikube.ps1
 
 # Port forward all services and show URLs
 ./scripts/forward-all-services.ps1
@@ -30,7 +30,7 @@ Perry Chick is a **microservices e-commerce application** running on Kubernetes 
 - "Debug Notifications" (dotnet run in notifications/)
 ```
 
-**⚠️ Important**: Always run `reinitialize-minikube.ps1` first to start the Kubernetes cluster. Other deployment scripts require Minikube to be running.
+**⚠️ Important**: Always run `minikube.ps1` first to start the Kubernetes cluster. Other deployment scripts require Minikube to be running.
 
 ### Environment Management
 
@@ -118,7 +118,7 @@ Frontend ↔ Backend API ↔ PostgreSQL (EF Core) ↔ Monitoring (OpenTelemetry)
 - `backend/Program.cs` - API configuration, CORS, JWT, EF setup
 - `k8s/deploy.yaml` - Complete infrastructure definition
 - `scripts/` - Essential automation (builds, deploys, port forwarding)
-  - `reinitialize-minikube.ps1` - Complete fresh setup
+  - `minikube.ps1` - Complete fresh setup with start/stop/restart options
   - `deploy-full.ps1` - Deploy with environment sync
   - `forward-all-services.ps1` - Port forwarding for local access
   - `update-env-config.ps1` - Environment configuration management
@@ -133,4 +133,7 @@ Frontend ↔ Backend API ↔ PostgreSQL (EF Core) ↔ Monitoring (OpenTelemetry)
 **Monitoring**: Update dashboards in `monitoring/grafana/dashboards/`
 **Deploy changes**: Use `scripts/deploy-full.ps1` or VS Code "Deploy Full" task
 
+## Custom Instructions
+
 Do not use emojis in code comments or documentation. Keep comments clear and professional.
+In environment files use KC instead of KEYCLOAK for Keycloak configuration.

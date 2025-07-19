@@ -20,7 +20,7 @@ The authentication system uses Keycloak as the identity provider with the follow
 Ctrl+Shift+P -> "Tasks: Run Task" -> "Start Local Keycloak"
 
 # Or using script directly
-.\scripts\start-local-keycloak.ps1
+.\scripts\keycloak.ps1
 ```
 
 ### 2. Access Keycloak Admin Console
@@ -153,9 +153,16 @@ The backend validates JWT tokens from Keycloak:
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = Environment.GetEnvironmentVariable("KEYCLOAK_URL");
-        options.Audience = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID");
+        options.Authority = Environment.GetEnvironmentVariable("KC_AUTHORITY_URL");
+        options.Audience = Environment.GetEnvironmentVariable("KC_CLIENT_ID");
         options.RequireHttpsMetadata = false; // Development only
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = Environment.GetEnvironmentVariable("KC_ISSUERS_URL"),
+            // ... other validation parameters
+        };
     });
 ```
 
@@ -231,7 +238,7 @@ try {
 Update `src/lib/auth/keycloak.ts`:
 
 ```typescript
-const KEYCLOAK_CONFIG = {
+const KC_CONFIG = {
   url:
     process.env.NODE_ENV === "production"
       ? "https://auth.perrychick.com"
@@ -246,9 +253,11 @@ const KEYCLOAK_CONFIG = {
 Set environment variables in `.env.local`:
 
 ```bash
-KEYCLOAK_URL=http://localhost:8080/realms/perrychick
-KEYCLOAK_CLIENT_ID=perrychick-frontend
-KEYCLOAK_CLIENT_SECRET=your_client_secret_here
+KC_AUTHORITY_URL=http://localhost:8080
+KC_ISSUERS_URL=http://localhost:8080
+KC_REALM=perrychick
+KC_CLIENT_ID=perrychick-frontend
+KC_CLIENT_SECRET=your_client_secret_here
 ```
 
 ## Roles and Permissions
@@ -342,7 +351,7 @@ docker ps
 docker logs perrychick-keycloak-local
 
 # Restart Keycloak
-.\scripts\start-local-keycloak.ps1 -Force
+.\scripts\keycloak.ps1 -Force
 ```
 
 #### 2. Authentication Fails
@@ -380,7 +389,7 @@ console.log("Roles:", keycloakService.keycloak?.realmAccess?.roles);
 
 ### Test Login Flow
 
-1. Start Keycloak: `.\scripts\start-local-keycloak.ps1`
+1. Start Keycloak: `.\scripts\keycloak.ps1`
 2. Start Frontend: `npm run dev`
 3. Visit: http://localhost:3000/protected
 4. Click "Login with Keycloak"

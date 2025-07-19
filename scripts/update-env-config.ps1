@@ -1,194 +1,347 @@
 #!/usr/bin/env pwsh
-
 <#
-.SYNOPSI# Define sensitive variables that should go to secrets instead of ConfigMap
-$sensitiveVars = @(
-    "POSTGRES_PASSWORD",
-    "DATABASE_URL",
-    "KEYCLOAK_ADMIN_PASSWORD",
-    "KEYCLOAK_CLIENT_SECRET",
-    "KEYCLOAK_DB_PASSWORD",
-    "REDIS_PASSWORD",
-    "SENDGRID_API_KEY",
-    "GRAFANA_ADMIN_PASSWORD",
-    "STRAPI_JWT_SECRET",
-    "STRAPI_ADMIN_JWT_SECRET",
-    "STRAPI_APP_KEYS",
-    "STRAPI_API_TOKEN_SALT",
-    "STRAPI_API_TOKEN",
-    "STRAPI_TRANSFER_TOKEN_SALT"
-)environment synchronization and deployment script
+.SYNOPSIS
+    Update Kubernetes ConfigMap and Secrets from .env.kubernetes file
 .DESCRIPTION
-    This script synchronizes both ConfigMap and Secrets from .env.local,
-    then optionally deploys the updated configuration to Kubernetes.
+    This script synchronizes environment variables from .env.kubernetes to Kubernetes ConfigMap and Secrets.
+    Non-sensitive values go to ConfigMap, sensitive values go to Secrets.
+    It can also apply the changes to Kubernetes and restart deployments.
 .PARAMETER Apply
-    Apply changes to Kubernetes cluster
+    Apply the generated ConfigMap and Secrets to Kubernetes
 .PARAMETER Restart
-    Restart deployments after applying changes
+    Restart deployments after applying configuration (requires -Apply)
 .PARAMETER Backup
-    Create backups before updating
+    Create backup of existing ConfigMap and Secrets before updating
+.PARAMETER EnvFile
+    Path to the environment file (default: .env.kubernetes)
+.EXAMPLE
+    .\update-env-config.ps1
+    Generate ConfigMap and Secrets (dry run)
+.EXAMPLE
+    .\update-env-config.ps1 -Apply
+    Generate and apply to Kubernetes
+.EXAMPLE
+    .\update-env-config.ps1 -Apply -Restart
+    Generate, apply, and restart deployments
+.EXAMPLE
+    .\update-env-config.ps1 -Apply -Restart -Backup
+    Create backups, generate, apply, and restart deployments
 #>
 
 param(
-	[switch]$Apply,
-	[switch]$Restart,
-	[switch]$Backup
+    [switch]$Apply,
+    [switch]$Restart,
+    [switch]$Backup,
+    [string]$EnvFile = ".env.kubernetes",
+    [string]$ConfigMapName = "perrychick-config",
+    [string]$SecretName = "perrychick-secrets",
+    [string]$ConfigMapFile = "k8s/configmap.yaml",
+    [string]$SecretFile = "k8s/secrets-generated.yaml"
 )
 
-Write-Host "🚀 Perry Chick Environment Synchronization" -ForegroundColor Green
-Write-Host "==========================================" -ForegroundColor Green
+# Colors for output
+$Red = "`e[31m"
+$Green = "`e[32m"
+$Yellow = "`e[33m"
+$Blue = "`e[34m"
+$Cyan = "`e[36m"
+$Reset = "`e[0m"
 
-# Ensure we're in the project root
-if (-not (Test-Path ".env.local")) {
-	Write-Error "Please run this script from the project root directory where .env.local exists"
-	exit 1
+function Write-ColorOutput {
+    param([string]$Message, [string]$Color = $Reset)
+    Write-Host "$Color$Message$Reset"
 }
 
-# Step 1: Sync ConfigMap
-Write-Host ""
-Write-Host "📋 Step 1: Synchronizing ConfigMap from .env.local..." -ForegroundColor Cyan
-
-# Define sensitive variables that should go to secrets instead of ConfigMap
-$sensitiveVars = @(
-	"POSTGRES_PASSWORD",
-	"DATABASE_URL",
-	"KEYCLOAK_ADMIN_PASSWORD",
-	"KEYCLOAK_CLIENT_SECRET",
-	"KEYCLOAK_DB_PASSWORD",
-	"REDIS_PASSWORD",
-	"SENDGRID_API_KEY",
-	"GRAFANA_ADMIN_PASSWORD",
-	"STRAPI_JWT_SECRET",
-	"STRAPI_ADMIN_JWT_SECRET",
-	"STRAPI_APP_KEYS",
-	"STRAPI_API_TOKEN_SALT",
-	"STRAPI_API_TOKEN",
-	"STRAPI_TRANSFER_TOKEN_SALT"
-)
-
-# Read .env.local and filter out sensitive values and comments
-$envContent = Get-Content .env.local | Where-Object {
-	$_ -match "^[A-Z_]+=.+" -and
-	-not ($sensitiveVars -contains $_.Split('=')[0])
+function Test-KubectlAvailable {
+    try {
+        kubectl version --client=true --output=yaml | Out-Null
+        return $true
+    }
+    catch {
+        Write-ColorOutput "❌ kubectl is not available or not configured!" $Red
+        Write-ColorOutput "Please ensure kubectl is installed and configured." $Yellow
+        return $false
+    }
 }
 
-# Create ConfigMap YAML
-$configMapContent = @"
+function Create-Backup {
+    param([string]$ResourceType, [string]$ResourceName, [string]$BackupDir)
+
+    if (!(Test-Path $BackupDir)) {
+        New-Item -ItemType Directory -Path $BackupDir | Out-Null
+    }
+
+    $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupFile = "$BackupDir/$ResourceType-$ResourceName-$timestamp.yaml"
+
+    try {
+        kubectl get $ResourceType $ResourceName -o yaml > $backupFile 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "  ✓ Backed up $ResourceType/$ResourceName to $backupFile" $Cyan
+        }
+    }
+    catch {
+        Write-ColorOutput "  ⚠️  Could not backup $ResourceType/$ResourceName (may not exist)" $Yellow
+    }
+}
+
+function Generate-ConfigMap {
+    param([hashtable]$ConfigData)
+
+    Write-ColorOutput "📝 Generating ConfigMap..." $Blue
+
+    # Define sensitive keys that should go to Secrets instead
+    $sensitiveKeys = @(
+        "POSTGRES_PASSWORD",
+        "KC_ADMIN_PASSWORD",
+        "KC_DB_PASSWORD",
+        "KC_CLIENT_SECRET",
+        "REDIS_PASSWORD",
+        "SENDGRID_API_KEY",
+        "DATABASE_URL",
+        "GRAFANA_ADMIN_PASSWORD"
+    )
+
+    $configMapData = @{}
+
+    foreach ($key in $ConfigData.Keys) {
+        if ($sensitiveKeys -notcontains $key) {
+            # Use the value as-is from the environment file
+            $configMapData[$key] = $ConfigData[$key]
+            Write-ColorOutput "  ✓ Added to ConfigMap: $key" $Cyan
+        }
+    }
+
+    # Generate YAML
+    $yaml = @"
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: perrychick-config
+  name: $ConfigMapName
+  namespace: default
 data:
 "@
 
+    foreach ($key in $configMapData.Keys | Sort-Object) {
+        $value = $configMapData[$key]
+        $yaml += "`n  $key`: `"$value`""
+    }
+
+    # Ensure k8s directory exists
+    if (!(Test-Path "k8s")) {
+        New-Item -ItemType Directory -Path "k8s" | Out-Null
+    }
+
+    # Write ConfigMap file
+    $yaml | Out-File -FilePath $ConfigMapFile -Encoding utf8
+    Write-ColorOutput "✅ ConfigMap generated: $ConfigMapFile" $Green
+}
+
+function Generate-Secrets {
+    param([hashtable]$ConfigData)
+
+    Write-ColorOutput "🔐 Generating Secrets..." $Blue
+
+    # Define sensitive keys
+    $sensitiveKeys = @(
+        "POSTGRES_PASSWORD",
+        "KC_ADMIN_PASSWORD",
+        "KC_DB_PASSWORD",
+        "KC_CLIENT_SECRET",
+        "REDIS_PASSWORD",
+        "SENDGRID_API_KEY",
+        "DATABASE_URL",
+        "GRAFANA_ADMIN_PASSWORD"
+    )
+
+    $secrets = @{}
+
+    foreach ($key in $ConfigData.Keys) {
+        if ($sensitiveKeys -contains $key) {
+            $value = $ConfigData[$key]
+            if ($value -ne "" -and $value -notmatch "^(your_.*_here|change_me)$") {
+                # Convert to base64
+                $bytes = [System.Text.Encoding]::UTF8.GetBytes($value)
+                $base64 = [System.Convert]::ToBase64String($bytes)
+                $secrets[$key] = $base64
+                Write-ColorOutput "  ✓ Added to Secrets: $key" $Cyan
+            }
+        }
+    }
+
+    if ($secrets.Count -eq 0) {
+        Write-ColorOutput "⚠️  No valid secrets found to generate" $Yellow
+        return
+    }
+
+    # Generate YAML
+    $yaml = @"
+apiVersion: v1
+kind: Secret
+metadata:
+  name: $SecretName
+  namespace: default
+type: Opaque
+data:
+"@
+
+    foreach ($key in $secrets.Keys | Sort-Object) {
+        $yaml += "`n  $key`: $($secrets[$key])"
+    }
+
+    # Write Secrets file
+    $yaml | Out-File -FilePath $SecretFile -Encoding utf8
+    Write-ColorOutput "✅ Secrets generated: $SecretFile" $Green
+}
+
+function Create-KeycloakRealmConfigMap {
+    Write-ColorOutput "🔐 Creating Keycloak Realm ConfigMap..." $Blue
+
+    $realmFile = "perrychick-realm-local.json"
+
+    if (!(Test-Path $realmFile)) {
+        Write-ColorOutput "  ⚠️  Realm file not found: $realmFile" $Yellow
+        Write-ColorOutput "  Skipping Keycloak realm ConfigMap creation" $Yellow
+        return $true
+    }
+
+    # Delete existing ConfigMap if it exists
+    kubectl delete configmap keycloak-realm-config 2>$null | Out-Null
+
+    # Create ConfigMap from file
+    kubectl create configmap keycloak-realm-config --from-file=realm.json=$realmFile
+
+    if ($LASTEXITCODE -eq 0) {
+        Write-ColorOutput "  ✅ Keycloak realm ConfigMap created successfully" $Green
+        return $true
+    } else {
+        Write-ColorOutput "  ❌ Failed to create Keycloak realm ConfigMap" $Red
+        return $false
+    }
+}
+
+function Apply-ToKubernetes {
+    Write-ColorOutput "🚀 Applying configuration to Kubernetes..." $Blue
+
+    # Apply ConfigMap
+    if (Test-Path $ConfigMapFile) {
+        kubectl apply -f $ConfigMapFile
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "  ✅ ConfigMap applied successfully" $Green
+        } else {
+            Write-ColorOutput "  ❌ Failed to apply ConfigMap" $Red
+            return $false
+        }
+    }
+
+    # Apply Secrets
+    if (Test-Path $SecretFile) {
+        kubectl apply -f $SecretFile
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "  ✅ Secrets applied successfully" $Green
+        } else {
+            Write-ColorOutput "  ❌ Failed to apply Secrets" $Red
+            return $false
+        }
+    }
+
+    # Create Keycloak Realm ConfigMap from file
+    $realmSuccess = Create-KeycloakRealmConfigMap
+    if (!$realmSuccess) {
+        Write-ColorOutput "  ⚠️  Keycloak realm ConfigMap creation failed, but continuing..." $Yellow
+    }
+
+    return $true
+}
+
+function Restart-Deployments {
+    Write-ColorOutput "🔄 Restarting deployments..." $Blue
+
+    $deployments = @(
+        "backend",
+        "frontend",
+        "notifications",
+        "keycloak",
+        "grafana"
+    )
+
+    foreach ($deployment in $deployments) {
+        Write-ColorOutput "  🔄 Restarting $deployment..." $Yellow
+        kubectl rollout restart deployment/$deployment 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-ColorOutput "    ✅ $deployment restarted" $Green
+        } else {
+            Write-ColorOutput "    ⚠️  $deployment restart failed (may not exist)" $Yellow
+        }
+    }
+}
+
+# Main execution
+Write-ColorOutput "🔧 Perry Chick - Environment Configuration Manager" $Blue
+Write-ColorOutput "=" * 60 $Blue
+
+# Check if .env.local exists
+if (!(Test-Path $EnvFile)) {
+    Write-ColorOutput "❌ Error: $EnvFile not found!" $Red
+    Write-ColorOutput "Please ensure you have a $EnvFile file in the root directory." $Yellow
+    exit 1
+}
+
+# Read environment file
+Write-ColorOutput "📁 Reading environment variables from $EnvFile..." $Blue
+$envContent = Get-Content $EnvFile
+$configData = @{}
+
 foreach ($line in $envContent) {
-	if ($line -match "^([A-Z_]+)=(.*)$") {
-		$key = $matches[1]
-		$value = $matches[2]
-		# Remove quotes if present
-		$value = $value -replace '^"(.*)"$', '$1'
-		$configMapContent += "`n  $key`: `"$value`""
-	}
+    if ($line -match "^([^#][^=]+)=(.*)$") {
+        $key = $matches[1].Trim()
+        $value = $matches[2].Trim()
+
+        # Remove quotes if present
+        $value = $value -replace '^"(.*)"$', '$1'
+        $value = $value -replace "^'(.*)'$", '$1'
+
+        if ($value -ne "") {
+            $configData[$key] = $value
+        }
+    }
 }
 
-# Write ConfigMap to file
-$configMapContent | Out-File -FilePath "k8s/configmap.yaml" -Encoding UTF8
-Write-Host "✅ ConfigMap synchronized from .env.local" -ForegroundColor Green
+Write-ColorOutput "📊 Found $($configData.Count) environment variables" $Cyan
 
-# Step 2: Generate Secrets
-Write-Host ""
-Write-Host "🔐 Step 2: Generating Secrets from .env.local..." -ForegroundColor Cyan
-if (Test-Path "scripts/generate-secrets.ps1") {
-	& "./scripts/generate-secrets.ps1"
-	if ($LASTEXITCODE -ne 0) {
-		Write-Error "Failed to generate secrets"
-		exit 1
-	}
-}
-else {
-	Write-Warning "generate-secrets.ps1 not found, skipping secret generation"
+# Create backups if requested
+if ($Backup -and $Apply) {
+    if (Test-KubectlAvailable) {
+        Write-ColorOutput "💾 Creating backups..." $Blue
+        Create-Backup "configmap" $ConfigMapName "backups"
+        Create-Backup "secret" $SecretName "backups"
+    }
 }
 
-# Step 3: Apply to Kubernetes if requested
+# Generate ConfigMap and Secrets
+Generate-ConfigMap $configData
+Generate-Secrets $configData
+
+# Apply to Kubernetes if requested
 if ($Apply) {
-	Write-Host ""
-	Write-Host "🚀 Step 3: Applying configuration to Kubernetes..." -ForegroundColor Cyan
+    if (Test-KubectlAvailable) {
+        $success = Apply-ToKubernetes
 
-	# Apply ConfigMap
-	Write-Host "📋 Applying ConfigMap..." -ForegroundColor Yellow
-	kubectl apply -f k8s/configmap.yaml
-	if ($LASTEXITCODE -ne 0) {
-		Write-Error "Failed to apply ConfigMap"
-		exit 1
-	}
-
-	# Apply Secrets
-	Write-Host "🔐 Applying Secrets..." -ForegroundColor Yellow
-	if (Test-Path "k8s/secrets-generated.yaml") {
-		kubectl apply -f k8s/secrets-generated.yaml
-		if ($LASTEXITCODE -ne 0) {
-			Write-Error "Failed to apply secrets"
-			exit 1
-		}
-	}
- else {
-		Write-Warning "secrets-generated.yaml not found, skipping secrets application"
-	}
-
-	Write-Host "✅ Configuration applied successfully" -ForegroundColor Green
+        # Restart deployments if requested and apply was successful
+        if ($Restart -and $success) {
+            Start-Sleep -Seconds 2
+            Restart-Deployments
+        }
+    } else {
+        Write-ColorOutput "❌ Cannot apply to Kubernetes - kubectl not available" $Red
+        exit 1
+    }
+} else {
+    Write-ColorOutput ""
+    Write-ColorOutput "ℹ️  Configuration files generated (dry run)" $Blue
+    Write-ColorOutput "   To apply: .\update-env-config.ps1 -Apply" $Yellow
+    Write-ColorOutput "   To apply and restart: .\update-env-config.ps1 -Apply -Restart" $Yellow
 }
 
-# Step 4: Restart deployments if requested
-if ($Restart -and $Apply) {
-	Write-Host ""
-	Write-Host "🔄 Step 4: Restarting deployments..." -ForegroundColor Cyan
-
-	$deployments = @(
-		"perrychick-backend",
-		"perrychick-frontend",
-		"perrychick-notifications"
-	)
-
-	foreach ($deployment in $deployments) {
-		Write-Host "🔄 Restarting $deployment..." -ForegroundColor Yellow
-		kubectl rollout restart deployment/$deployment
-		if ($LASTEXITCODE -eq 0) {
-			Write-Host "✅ $deployment restarted" -ForegroundColor Green
-		}
-		else {
-			Write-Warning "Failed to restart $deployment"
-		}
-	}
-
-	Write-Host ""
-	Write-Host "⏳ Waiting for deployments to complete..." -ForegroundColor Yellow
-	foreach ($deployment in $deployments) {
-		kubectl rollout status deployment/$deployment --timeout=300s
-	}
-}
-
-Write-Host ""
-Write-Host "🎉 Environment synchronization complete!" -ForegroundColor Green
-Write-Host ""
-
-if (-not $Apply) {
-	Write-Host "💡 To apply changes to Kubernetes, run:" -ForegroundColor Cyan
-	Write-Host "   ./scripts/update-env-config.ps1 -Apply -Restart" -ForegroundColor White
-}
-
-Write-Host ""
-Write-Host "📊 Configuration Status:" -ForegroundColor Cyan
-Write-Host "  ✅ ConfigMap: k8s/configmap.yaml" -ForegroundColor Green
-if (Test-Path "k8s/secrets-generated.yaml") {
-	Write-Host "  ✅ Secrets: k8s/secrets-generated.yaml" -ForegroundColor Green
-}
-else {
-	Write-Host "  ⚠️  Secrets: not generated" -ForegroundColor Yellow
-}
-
-if ($Apply) {
-	Write-Host "  ✅ Applied to Kubernetes" -ForegroundColor Green
-	if ($Restart) {
-		Write-Host "  ✅ Deployments restarted" -ForegroundColor Green
-	}
-}
+Write-ColorOutput ""
+Write-ColorOutput "✅ Environment configuration update completed!" $Green

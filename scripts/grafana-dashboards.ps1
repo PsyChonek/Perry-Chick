@@ -15,7 +15,7 @@ try {
 	kubectl cluster-info | Out-Null
 }
 catch {
-	Write-Error "❌ Kubernetes cluster not accessible. Please run: ./scripts/reinitialize-minikube.ps1"
+	Write-Error "❌ Kubernetes cluster not accessible. Please run: ./scripts/minikube.ps1"
 	exit 1
 }
 

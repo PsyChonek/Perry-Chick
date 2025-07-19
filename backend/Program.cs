@@ -111,17 +111,25 @@ builder.Services.AddCors(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 	.AddJwtBearer(options =>
 	{
-		var keycloakUrl = Environment.GetEnvironmentVariable("KEYCLOAK_URL") ?? "http://localhost:8080";
-		var keycloakRealm = Environment.GetEnvironmentVariable("KEYCLOAK_REALM") ?? "perrychick";
+		var keycloakRealm = Environment.GetEnvironmentVariable("KC_REALM") ?? "perrychick";
+		var keycloakAuthorityUrl = Environment.GetEnvironmentVariable("KC_AUTHORITY_URL") ?? "http://localhost:8080";
+		var keycloakIssuerUrl = Environment.GetEnvironmentVariable("KC_ISSUERS_URL") ?? "http://localhost:8080";
 
-		options.Authority = $"{keycloakUrl}/realms/{keycloakRealm}";
-		options.Audience = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID") ?? "perrychick-frontend";
-		options.RequireHttpsMetadata = false; // Only for development
+		// Use authority URL from environment (allows different URLs for fetching keys vs token validation)
+		options.Authority = $"{keycloakAuthorityUrl}/realms/{keycloakRealm}";
+		options.Audience = Environment.GetEnvironmentVariable("KC_CLIENT_ID") ?? "perrychick-frontend";
+		options.RequireHttpsMetadata = false; // Only for development TODO: Enable in production
+
+		// Parse multiple issuer URLs (comma-separated)
+		var issuerUrls = keycloakIssuerUrl.Split(',', StringSplitOptions.RemoveEmptyEntries)
+			.Select(url => url.Trim())
+			.Select(url => $"{url}/realms/{keycloakRealm}")
+			.ToArray();
 
 		options.TokenValidationParameters = new TokenValidationParameters
 		{
 			ValidateIssuer = true,
-			ValidIssuer = $"{keycloakUrl}/realms/{keycloakRealm}",
+			ValidIssuers = issuerUrls, // Use KC_ISSUERS_URL for issuer validation (supports multiple URLs)
 			ValidateAudience = false, // Disable audience validation for now to simplify
 			ValidateLifetime = true,
 			ValidateIssuerSigningKey = true,
@@ -131,6 +139,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 		// Add logging for debugging
 		options.Events = new JwtBearerEvents
 		{
+			OnMessageReceived = context =>
+			{
+				Log.Information("JWT token received");
+				return Task.CompletedTask;
+			},
 			OnTokenValidated = context =>
 			{
 				var user = context.Principal?.FindFirst("preferred_username")?.Value
@@ -148,6 +161,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 			OnAuthenticationFailed = context =>
 			{
 				Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+				Log.Warning("JWT Exception details: {Details}", context.Exception.ToString());
 				return Task.CompletedTask;
 			},
 			OnChallenge = context =>
@@ -157,7 +171,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 			}
 		};
 
-		Log.Information("JWT Authentication configured with issuer: {Issuer}", options.Authority);
+		Log.Information("JWT Authentication configured with authority: {Authority}, valid issuers: {Issuers}",
+			options.Authority, string.Join(", ", issuerUrls));
 	});
 
 builder.Services.AddAuthorization();
@@ -229,8 +244,9 @@ app.MapGet("/config", () => new
 {
 	DatabaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "✅ Loaded from .env" : "❌ Not found",
 	FrontendUrl = Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "❌ Not found",
-	KeycloakUrl = Environment.GetEnvironmentVariable("KEYCLOAK_URL") ?? "❌ Not found",
-	KeycloakClientId = Environment.GetEnvironmentVariable("KEYCLOAK_CLIENT_ID") ?? "❌ Not found"
+	KeycloakAuthorityUrl = Environment.GetEnvironmentVariable("KC_AUTHORITY_URL") ?? "❌ Not found",
+	KeycloakIssuerUrl = Environment.GetEnvironmentVariable("KC_ISSUERS_URL") ?? "❌ Not found",
+	KeycloakClientId = Environment.GetEnvironmentVariable("KC_CLIENT_ID") ?? "❌ Not found"
 })
 .WithName("GetConfig")
 .WithTags("Development")

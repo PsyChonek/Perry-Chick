@@ -11,7 +11,7 @@ import { browser } from '$app/environment';
 import { replaceState } from '$app/navigation';
 
 // Configuration from environment or defaults
-const KEYCLOAK_CONFIG = {
+const KC_CONFIG = {
 	url: 'http://localhost:8080',
 	realm: 'perrychick',
 	clientId: 'perrychick-frontend'
@@ -60,9 +60,9 @@ class KeycloakService {
 
 			// Create Keycloak instance
 			this.keycloak = new Keycloak({
-				url: KEYCLOAK_CONFIG.url,
-				realm: KEYCLOAK_CONFIG.realm,
-				clientId: KEYCLOAK_CONFIG.clientId
+				url: KC_CONFIG.url,
+				realm: KC_CONFIG.realm,
+				clientId: KC_CONFIG.clientId
 			});
 
 			// Initialize Keycloak with better error handling
@@ -341,4 +341,4 @@ export async function ensureKeycloakInit(): Promise<boolean> {
 }
 
 // Export for use in components
-export { KEYCLOAK_CONFIG, KeycloakService };
+export { KC_CONFIG, KeycloakService };

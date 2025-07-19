@@ -4,13 +4,13 @@
 
 ## Overview
 
-Perry Chick is a simple e-commerce web application for selling products. It features a product catalog, shopping cart, user authentication, content management, notifications, and monitoring. The project is designed for easy local development with Minikube and is fully containerized for Kubernetes deployment.
+Perry Chick is a simple e-commerce web application for selling products. It features a product catalog, shopping cart, user authentication, notifications, and monitoring. The project is designed for easy local development with Minikube and is fully containerized for Kubernetes deployment.
 
 - **Target Users:** Customers buying snacks; shop owner (your friend) for managing content and orders.
 - **Key Features:**
   - Browse and purchase products.
   - Secure authentication via Keycloak.
-  - Content editing with Strapi CMS.
+  - Product and content management through the frontend admin interface.
   - Asynchronous notifications (email/webhook) backed by Redis queue.
   - Observability with OpenTelemetry, Jaeger, Prometheus, and Grafana.
   - Database migrations via EF Core in C# backend.
@@ -19,11 +19,10 @@ This project is public and uses open-source tools and public Docker images for e
 
 ## Tech Stack
 
-- **Frontend:** SvelteKit with TailwindCSS.
+- **Frontend:** SvelteKit with TailwindCSS (includes admin interface for content management).
 - **Backend:** C# Minimal API (.NET 8+ with EF Core for DB migrations).
 - **Database:** PostgreSQL (code-first schema via EF Core).
 - **Authentication:** Keycloak.
-- **CMS:** Strapi.
 - **Notifications:** Dedicated C# service with Redis queue (supports email via SendGrid, webhooks).
 - **Monitoring:** OpenTelemetry (with Collector), Jaeger (tracing), Prometheus (metrics), Grafana (dashboards).
 - **Orchestration:** Kubernetes (Minikube for local dev); all in one `deploy.yaml`.
@@ -48,14 +47,14 @@ This project is public and uses open-source tools and public Docker images for e
 
    ```bash
    # Run the comprehensive deployment
-   ./scripts/Run-All-in-Minikube.ps1
+   ./scripts/deploy-full.ps1
    ```
 
 2. **Access the services:**
 
    ```bash
    # Start port forwarding for all services
-   ./scripts/Forward-All-Services.ps1
+   ./scripts/forward-all-services.ps1
    ```
 
 3. **View monitoring dashboards:**

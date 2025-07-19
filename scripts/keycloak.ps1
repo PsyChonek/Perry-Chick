@@ -12,13 +12,13 @@
 .PARAMETER ImportRealm
     Force re-import the realm configuration
 .EXAMPLE
-    .\start-local-keycloak.ps1
+    .\keycloak.ps1
     Start Keycloak container
 .EXAMPLE
-    .\start-local-keycloak.ps1 -Stop
+    .\keycloak.ps1 -Stop
     Stop Keycloak container
 .EXAMPLE
-    .\start-local-keycloak.ps1 -Force
+    .\keycloak.ps1 -Force
     Force restart Keycloak container
 #>
 
@@ -28,7 +28,7 @@ param(
 	[switch]$ImportRealm
 )
 
-# Container configuration
+# Container configuration - defaults that will be overridden by env vars
 $ContainerName = "perrychick-keycloak-local"
 $KeycloakUser = "admin"
 $KeycloakPassword = "admin_password_change_me"
@@ -54,8 +54,12 @@ if (Test-Path $EnvFile) {
 	}
 
 	# Override defaults with environment values if they exist
-	if ($env:KEYCLOAK_ADMIN) { $KeycloakUser = $env:KEYCLOAK_ADMIN }
-	if ($env:KEYCLOAK_ADMIN_PASSWORD) { $KeycloakPassword = $env:KEYCLOAK_ADMIN_PASSWORD }
+	if ($env:KC_ADMIN) { $KeycloakUser = $env:KC_ADMIN }
+	if ($env:KC_ADMIN_PASSWORD) { $KeycloakPassword = $env:KC_ADMIN_PASSWORD }
+	if ($env:KC_CONTAINER_NAME) { $ContainerName = $env:KC_CONTAINER_NAME }
+	if ($env:KC_PORT) { $Port = $env:KC_PORT }
+	if ($env:KC_IMAGE) { $Image = $env:KC_IMAGE }
+	if ($env:KC_REALM_FILE) { $RealmFile = $env:KC_REALM_FILE }
 }
 
 # Colors for output
@@ -107,131 +111,55 @@ function Stop-KeycloakContainer {
 function Create-RealmConfig {
 	Write-ColorOutput "📝 Creating realm configuration..." $Blue
 
-	$realmConfig = @{
-		realm                  = "perrychick"
-		displayName            = "Perry Chick"
-		enabled                = $true
-		registrationAllowed    = $true
-		loginWithEmailAllowed  = $true
-		duplicateEmailsAllowed = $false
-		resetPasswordAllowed   = $true
-		editUsernameAllowed    = $false
-		bruteForceProtected    = $true
-		clients                = @(
-			@{
-				clientId                  = "perrychick-frontend"
-				name                      = "Perry Chick Frontend"
-				enabled                   = $true
-				clientAuthenticatorType   = "client-secret"
-				secret                    = "your_client_secret_here"
-				standardFlowEnabled       = $true
-				implicitFlowEnabled       = $false
-				directAccessGrantsEnabled = $true
-				serviceAccountsEnabled    = $false
-				publicClient              = $true
-				frontchannelLogout        = $true
-				protocol                  = "openid-connect"
-				attributes                = @{
-					"saml.assertion.signature"                   = "false"
-					"saml.force.post.binding"                    = "false"
-					"saml.multivalued.roles"                     = "false"
-					"saml.encrypt"                               = "false"
-					"saml.server.signature"                      = "false"
-					"saml.server.signature.keyinfo.ext"          = "false"
-					"exclude.session.state.from.auth.response"   = "false"
-					"saml_force_name_id_format"                  = "false"
-					"saml.client.signature"                      = "false"
-					"tls.client.certificate.bound.access.tokens" = "false"
-					"saml.authnstatement"                        = "false"
-					"display.on.consent.screen"                  = "false"
-					"saml.onetimeuse.condition"                  = "false"
-				}
-				redirectUris              = @(
-					"http://localhost:3000/*",
-					"http://localhost:5173/*"
-				)
-				webOrigins                = @(
-					"http://localhost:3000",
-					"http://localhost:5173",
-					"+"
-				)
-				defaultClientScopes       = @(
-					"web-origins",
-					"profile",
-					"roles",
-					"email"
-				)
-				optionalClientScopes      = @(
-					"address",
-					"phone",
-					"offline_access",
-					"microprofile-jwt"
-				)
-			}
-		)
-		roles                  = @{
-			realm = @(
-				@{
-					name        = "admin"
-					description = "Administrator role"
-				},
-				@{
-					name        = "user"
-					description = "Regular user role"
-				},
-				@{
-					name        = "farmer"
-					description = "Farmer role with chick management permissions"
-				}
-			)
-		}
-		users                  = @(
-			@{
-				id            = "admin-keycloak-id"
-				username      = "admin"
-				enabled       = $true
-				firstName     = "Admin"
-				lastName      = "User"
-				email         = "admin@perrychick.com"
-				emailVerified = $true
-				credentials   = @(
-					@{
-						type      = "password"
-						value     = "admin123"
-						temporary = $false
-					}
-				)
-				realmRoles    = @(
-					"admin",
-					"user"
-				)
-			},
-			@{
-				id            = "farmer1-keycloak-id"
-				username      = "farmer1"
-				enabled       = $true
-				firstName     = "John"
-				lastName      = "Farmer"
-				email         = "farmer@perrychick.com"
-				emailVerified = $true
-				credentials   = @(
-					@{
-						type      = "password"
-						value     = "farmer123"
-						temporary = $false
-					}
-				)
-				realmRoles    = @(
-					"farmer",
-					"user"
-				)
-			}
-		)
-	}
+	$templateFile = "perrychick-realm-local.json"
 
-	$json = $realmConfig | ConvertTo-Json -Depth 10
-	$json | Out-File -FilePath $RealmFile -Encoding utf8
-	Write-ColorOutput "✅ Realm configuration created: $RealmFile" $Green
+	# Check if template file exists
+	if (Test-Path $templateFile) {
+		Write-ColorOutput "📄 Using realm template: $templateFile" $Cyan
+
+		# Read template and replace environment variables
+		$templateContent = Get-Content $templateFile -Raw
+
+		# Replace environment variables in template
+		$realmName = $env:KC_REALM ?? "perrychick"
+		$clientId = $env:KC_CLIENT_ID ?? "perrychick-frontend"
+		$clientSecret = $env:KC_CLIENT_SECRET ?? "your_client_secret_here"
+		$frontendUrl = $env:FRONTEND_URL ?? "http://localhost:3000"
+		$viteDevUrl = "http://localhost:5173"  # Vite dev server
+
+		# Replace placeholders in template
+		$realmContent = $templateContent `
+			-replace '"realm":\s*"[^"]*"', "`"realm`": `"$realmName`"" `
+			-replace '"clientId":\s*"[^"]*"', "`"clientId`": `"$clientId`"" `
+			-replace '"secret":\s*"[^"]*"', "`"secret`": `"$clientSecret`""
+
+		# Update redirect URIs and web origins with current URLs
+		$redirectUris = @(
+			"$frontendUrl/*",
+			"$viteDevUrl/*"
+		)
+		$webOrigins = @(
+			$frontendUrl,
+			$viteDevUrl,
+			"+"
+		)
+
+		# Parse JSON to update arrays
+		$realmConfig = $realmContent | ConvertFrom-Json
+		$realmConfig.clients[0].redirectUris = $redirectUris
+		$realmConfig.clients[0].webOrigins = $webOrigins
+
+		# Convert back to JSON
+		$json = $realmConfig | ConvertTo-Json -Depth 10
+
+		$json | Out-File -FilePath $RealmFile -Encoding utf8
+		Write-ColorOutput "✅ Realm configuration created: $RealmFile" $Green
+	}
+	else {
+		Write-ColorOutput "❌ Error: Template file not found: $templateFile" $Red
+		Write-ColorOutput "Please ensure the realm template file exists in the root directory." $Yellow
+		throw "Template file '$templateFile' not found"
+	}
 }
 
 function Start-KeycloakContainer {
@@ -267,8 +195,8 @@ function Start-KeycloakContainer {
 
 		docker run -d `
 			--name $ContainerName `
-			-e "KEYCLOAK_ADMIN=$KeycloakUser" `
-			-e "KEYCLOAK_ADMIN_PASSWORD=$KeycloakPassword" `
+			-e "KC_ADMIN=$KeycloakUser" `
+			-e "KC_ADMIN_PASSWORD=$KeycloakPassword" `
 			-e "KC_HTTP_ENABLED=true" `
 			-e "KC_HOSTNAME_STRICT=false" `
 			-e "KC_HOSTNAME_STRICT_HTTPS=false" `
@@ -352,7 +280,7 @@ function Show-TestUsers {
 	Write-ColorOutput "      Roles: farmer, user" $Reset
 	Write-ColorOutput ""
 	Write-ColorOutput "ℹ️  To stop: docker stop $ContainerName" $Blue
-	Write-ColorOutput "ℹ️  Or use: .\start-local-keycloak.ps1 -Stop" $Blue
+	Write-ColorOutput "ℹ️  Or use: .\keycloak.ps1 -Stop" $Blue
 }
 
 # Main execution

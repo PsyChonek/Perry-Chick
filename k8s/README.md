@@ -76,13 +76,14 @@ Contains:
 
 ### Authentication (Keycloak)
 
-| Environment Variable      | Source    | Description       |
-| ------------------------- | --------- | ----------------- |
-| `KEYCLOAK_ADMIN`          | ConfigMap | Admin username    |
-| `KEYCLOAK_ADMIN_PASSWORD` | Secret    | Admin password    |
-| `KEYCLOAK_URL`            | ConfigMap | Service URL       |
-| `KEYCLOAK_REALM`          | ConfigMap | Realm name        |
-| `KEYCLOAK_CLIENT_ID`      | ConfigMap | Client identifier |
+| Environment Variable | Source    | Description                     |
+| -------------------- | --------- | ------------------------------- |
+| `KC_ADMIN`           | ConfigMap | Admin username                  |
+| `KC_ADMIN_PASSWORD`  | Secret    | Admin password                  |
+| `KC_AUTHORITY_URL`   | ConfigMap | Authority URL for key fetching  |
+| `KC_ISSUERS_URL`     | ConfigMap | Issuer URL for token validation |
+| `KC_REALM`           | ConfigMap | Realm name                      |
+| `KC_CLIENT_ID`       | ConfigMap | Client identifier               |
 
 ### Cache (Redis)
 

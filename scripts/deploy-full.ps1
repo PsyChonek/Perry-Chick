@@ -16,7 +16,7 @@ try {
 	Write-Host '✅ Kubernetes cluster is accessible' -ForegroundColor Green
 }
 catch {
-	Write-Error '❌ Kubernetes cluster not accessible. Please run: ./scripts/reinitialize-minikube.ps1'
+	Write-Error '❌ Kubernetes cluster not accessible. Please run: ./scripts/minikube.ps1'
 	exit 1
 }
 
@@ -27,9 +27,9 @@ Write-Host 'Step 2: Deploying application...' -ForegroundColor Yellow
 kubectl apply -f ./k8s/deploy.yaml
 
 Write-Host 'Step 3: Setting up dashboards...' -ForegroundColor Yellow
-./scripts/setup-dashboards.ps1
+./scripts/grafana-dashboards.ps1
 
 Write-Host 'Step 4: Restarting deployments to pick up changes...' -ForegroundColor Yellow
-kubectl rollout restart deployment/perrychick-backend deployment/perrychick-frontend deployment/perrychick-notifications deployment/strapi
+kubectl rollout restart deployment/perrychick-backend deployment/perrychick-frontend deployment/perrychick-notifications
 
 Write-Host 'Full deployment complete! ✅' -ForegroundColor Green

@@ -111,6 +111,13 @@ spec:
       targetPort: 6379
   type: ClusterIP
 ---
+
+---
+# Keycloak Realm Configuration
+# NOTE: This ConfigMap should be created from perrychick-realm-local.json
+# Use: kubectl create configmap keycloak-realm-config --from-file=realm.json=perrychick-realm-local.json
+# Or run: .\scripts\update-env-config.ps1 -Apply to generate automatically
+---
 # Keycloak Authentication
 apiVersion: apps/v1
 kind: Deployment
@@ -131,18 +138,18 @@ spec:
       containers:
         - name: keycloak
           image: quay.io/keycloak/keycloak:23.0
-          args: ["start-dev"]
+          args: ["start-dev", "--import-realm"]
           env:
-            - name: KEYCLOAK_ADMIN
+            - name: KC_ADMIN
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: KEYCLOAK_ADMIN
-            - name: KEYCLOAK_ADMIN_PASSWORD
+                  key: KC_ADMIN
+            - name: KC_ADMIN_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: perrychick-secrets
-                  key: KEYCLOAK_ADMIN_PASSWORD
+                  key: KC_ADMIN_PASSWORD
             - name: KC_DB
               valueFrom:
                 configMapKeyRef:
@@ -162,7 +169,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: perrychick-secrets
-                  key: KEYCLOAK_DB_PASSWORD
+                  key: KC_DB_PASSWORD
             - name: KC_HTTP_CORS_ENABLED
               valueFrom:
                 configMapKeyRef:
@@ -175,6 +182,10 @@ spec:
                   key: KC_HTTP_CORS_ORIGINS
           ports:
             - containerPort: 8080
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
           resources:
             requests:
               memory: "512Mi"
@@ -182,6 +193,10 @@ spec:
             limits:
               memory: "1Gi"
               cpu: "1000m"
+      volumes:
+        - name: realm-config
+          configMap:
+            name: keycloak-realm-config
 ---
 apiVersion: v1
 kind: Service
@@ -227,16 +242,21 @@ spec:
                 configMapKeyRef:
                   name: perrychick-config
                   key: FRONTEND_URL
-            - name: KEYCLOAK_URL
+            - name: KC_AUTHORITY_URL
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: KEYCLOAK_URL
-            - name: KEYCLOAK_CLIENT_ID
+                  key: KC_AUTHORITY_URL
+            - name: KC_ISSUERS_URL
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: KEYCLOAK_CLIENT_ID
+                  key: KC_ISSUERS_URL
+            - name: KC_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: perrychick-config
+                  key: KC_CLIENT_ID
             - name: REDIS_URL
               valueFrom:
                 configMapKeyRef:
@@ -328,21 +348,21 @@ spec:
                 configMapKeyRef:
                   name: perrychick-config
                   key: VITE_API_BASE_URL
-            - name: VITE_KEYCLOAK_URL
+            - name: VITE_KC_URL
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: VITE_KEYCLOAK_URL
-            - name: VITE_KEYCLOAK_REALM
+                  key: VITE_KC_URL
+            - name: VITE_KC_REALM
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: VITE_KEYCLOAK_REALM
-            - name: VITE_KEYCLOAK_CLIENT_ID
+                  key: VITE_KC_REALM
+            - name: VITE_KC_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
                   name: perrychick-config
-                  key: VITE_KEYCLOAK_CLIENT_ID
+                  key: VITE_KC_CLIENT_ID
           ports:
             - containerPort: 3000
           resources:
@@ -427,100 +447,6 @@ spec:
   ports:
     - port: 5003
       targetPort: 8080
-  type: ClusterIP
----
-# Strapi CMS
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: strapi
-  labels:
-    app: strapi
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: strapi
-  template:
-    metadata:
-      labels:
-        app: strapi
-    spec:
-      containers:
-        - name: strapi
-          image: perrychick-strapi:latest
-          imagePullPolicy: Never
-          env:
-            - name: NODE_ENV
-              value: "production"
-            - name: DATABASE_CLIENT
-              value: "postgres"
-            - name: DATABASE_HOST
-              value: "postgres"
-            - name: DATABASE_PORT
-              value: "5432"
-            - name: DATABASE_NAME
-              valueFrom:
-                configMapKeyRef:
-                  name: perrychick-config
-                  key: POSTGRES_DB
-            - name: DATABASE_USERNAME
-              valueFrom:
-                configMapKeyRef:
-                  name: perrychick-config
-                  key: POSTGRES_USER
-            - name: DATABASE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: POSTGRES_PASSWORD
-            - name: DATABASE_SSL
-              value: "false"
-            - name: JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: STRAPI_JWT_SECRET
-            - name: ADMIN_JWT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: STRAPI_ADMIN_JWT_SECRET
-            - name: APP_KEYS
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: STRAPI_APP_KEYS
-            - name: API_TOKEN_SALT
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: STRAPI_API_TOKEN_SALT
-            - name: TRANSFER_TOKEN_SALT
-              valueFrom:
-                secretKeyRef:
-                  name: perrychick-secrets
-                  key: STRAPI_TRANSFER_TOKEN_SALT
-          ports:
-            - containerPort: 1337
-          resources:
-            requests:
-              memory: "512Mi"
-              cpu: "200m"
-            limits:
-              memory: "1Gi"
-              cpu: "1000m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: strapi
-spec:
-  selector:
-    app: strapi
-  ports:
-    - port: 1337
-      targetPort: 1337
   type: ClusterIP
 ---
 # Prometheus

@@ -4,6 +4,8 @@
 .env
 .env.local
 .env.*.local
+perrychick-realm-local.json
+.env.kubernetes
 
 # OS Files
 .DS_Store
@@ -204,14 +206,11 @@ docker-compose.local.yml
 k8s-local/
 local-*
 
-# Strapi
-.strapi-updater.json
+# Build artifacts that might be created by various tools
 exports/
 build/
-.strapi/
 dist/
 .env
-database/
 
 # SendGrid
 sendgrid.env
